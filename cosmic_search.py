@@ -7,7 +7,6 @@ from typing import Iterable
 import pandas as pd
 import requests
 
-
 API_BASE = "https://api.sam.gov/opportunities/v2/search"
 
 AGENCY_CHOICES = [
@@ -29,70 +28,86 @@ NAICS_CHOICES = {
 }
 
 KEYWORD_LIBRARY = {
-    "Refueling / Depot": [
-        "refuel", "refueling", "propellant", "fuel depot", "depot", "tanker", "transfer"
-    ],
-    "RPO / Docking": [
-        "rpo", "rendezvous", "proximity", "rpod", "docking", "berthing", "capture", "mate"
-    ],
-    "Robotics / Manipulation": [
-        "robotic", "robotics", "manipulator", "arm", "grapple", "end effector"
-    ],
-    "On-orbit servicing": [
-        "on-orbit", "on orbit", "servicing", "life extension", "repair", "upgrade"
-    ],
-    "Manufacturing / Assembly": [
-        "manufacturing", "assembly", "in-space manufacturing", "in space manufacturing",
-        "additive", "3d print", "welding"
-    ],
-    "EDL / TPS": [
-        "reentry", "tps", "thermal protection", "heat shield", "hypersonic",
-        "aerocapture", "aerobrake"
-    ],
-    "Comms / RF": [
-        "rf", "satcom", "antenna", "telemetry", "tt&c", "optical comm", "lasercom"
-    ],
-    "Power": [
-        "power", "nuclear power", "solar", "battery", "eps"
-    ],
+    "Refueling / Depot": ["refuel", "refueling", "propellant", "fuel depot", "depot", "tanker", "transfer"],
+    "RPO / Docking": ["rpo", "rendezvous", "proximity", "rpod", "docking", "berthing", "capture", "mate"],
+    "Robotics / Manipulation": ["robotic", "robotics", "manipulator", "arm", "grapple", "end effector"],
+    "On-orbit servicing": ["on-orbit", "on orbit", "servicing", "life extension", "repair", "upgrade"],
+    "Manufacturing / Assembly": ["manufacturing", "assembly", "in-space manufacturing", "in space manufacturing", "additive", "3d print", "welding"],
+    "EDL / TPS": ["reentry", "tps", "thermal protection", "heat shield", "hypersonic", "aerocapture", "aerobrake"],
+    "Comms / RF": ["rf", "satcom", "antenna", "telemetry", "tt&c", "optical comm", "lasercom"],
+    "Power": ["power", "nuclear power", "solar", "battery", "eps"],
 }
 
 KEYWORD_BUNDLES = {
-    "ISAM": [
-        "isam", "in-space servicing", "in space servicing", "on-orbit", "on orbit",
-        "on-orbit servicing", "rpo", "rendezvous", "proximity operations",
-        "in-space assembly", "in space assembly", "assembly",
-        "in-space manufacturing", "in space manufacturing", "manufacturing"
-    ],
-    "Space Systems": [
-        "spacecraft", "satellite", "launch", "payload", "cislunar",
-        "space vehicle", "leo", "meo", "geo", "ground segment", "orbit"
-    ],
-    "EDL / TPS / Hypersonics": [
-        "edl", "entry descent landing", "reentry", "tps", "thermal protection",
-        "heat shield", "aerobrake", "aerocapture", "hypersonic"
-    ],
-    "Avionics / GNC / Flight SW": [
-        "avionics", "gnc", "guidance", "navigation", "control",
-        "flight software", "embedded", "firmware", "real-time", "rtos"
-    ],
-    "Propulsion": [
-        "propulsion", "thruster", "hall thruster", "ion", "electric propulsion",
-        "chemical propulsion", "rocket engine"
-    ],
-    "Power / Thermal / Structures": [
-        "power", "battery", "eps", "solar array", "thermal", "radiator",
-        "structures", "materials", "composites"
-    ],
-    "Comms / RF": [
-        "communications", "rf", "satcom", "antenna", "transceiver", "telemetry", "tt&c"
-    ],
+    "ISAM": ["isam","in-space servicing","in space servicing","on-orbit","on orbit",
+             "on-orbit servicing","rpo","rendezvous","proximity operations",
+             "in-space assembly","in space assembly","assembly",
+             "in-space manufacturing","in space manufacturing","manufacturing"],
+    "Space Systems": ["spacecraft","satellite","launch","payload","cislunar","space vehicle",
+                      "leo","meo","geo","ground segment","orbit"],
+    "EDL / TPS / Hypersonics": ["edl","entry descent landing","reentry","tps","thermal protection",
+                                "heat shield","aerobrake","aerocapture","hypersonic"],
+    "Avionics / GNC / Flight SW": ["avionics","gnc","guidance","navigation","control",
+                                   "flight software","embedded","firmware","real-time","rtos"],
+    "Propulsion": ["propulsion","thruster","hall thruster","ion","electric propulsion",
+                   "chemical propulsion","rocket engine"],
+    "Power / Thermal / Structures": ["power","battery","eps","solar array","thermal","radiator",
+                                     "structures","materials","composites"],
+    "Comms / RF": ["communications","rf","satcom","antenna","transceiver","telemetry","tt&c"],
 }
 
 ENG_TERMS = [
-    "engineering", "avionics", "propulsion", "gnc", "guidance", "navigation",
-    "control", "thermal", "structures", "materials", "power", "battery",
-    "flight software", "embedded", "firmware", "communications", "rf"
+    "engineering","avionics","propulsion","gnc","guidance","navigation","control",
+    "thermal","structures","materials","power","battery","flight software","embedded",
+    "firmware","communications","rf"
+]
+
+# -----------------------------------------------------------------
+# COSMIC relevance layer
+# Based on COSMIC capability/technology taxonomies:
+# servicing, RPO/capture/docking, robotic manipulation, refueling,
+# assembly/manufacturing, autonomy, power, propulsion, comm/nav,
+# verification/validation, mobility/logistics, and surface systems.
+# -----------------------------------------------------------------
+
+COSMIC_DIRECT_ISAM = [
+    "isam", "in-space servicing", "on-orbit servicing", "satellite servicing",
+    "refuel", "refueling", "fluid transfer", "propellant transfer", "fuel depot",
+    "rendezvous", "proximity operations", "rpo", "rpod", "docking", "berthing",
+    "capture", "grapple", "robotic manipulation", "robotic servicing",
+    "in-space assembly", "on-orbit assembly", "structural assembly",
+    "in-space manufacturing", "on-orbit manufacturing", "additive manufacturing",
+    "repair", "maintenance", "upgrade", "life extension", "relocation",
+    "inspection", "metrology", "recycling", "reuse", "repurpose"
+]
+
+COSMIC_ECOSYSTEM = [
+    "spacecraft", "satellite", "space vehicle", "payload", "launch",
+    "access to space", "cislunar", "lunar", "orbital", "orbit",
+    "ground systems", "ground segment", "exploration systems",
+    "space mobility", "space logistics", "surface infrastructure", "isru"
+]
+
+COSMIC_ENABLERS = [
+    "autonomy", "autonomous", "automation", "distributed control",
+    "control and estimation", "guidance", "navigation", "gnc", "positioning",
+    "flight software", "computer vision", "relative navigation",
+    "power", "nuclear power", "solar array", "energy storage",
+    "propulsion", "thruster", "communications", "laser communication",
+    "optical communication", "rf", "antenna", "tracking",
+    "verification", "validation", "iv&v", "modeling", "simulation",
+    "interface", "standard", "modular", "robotics", "robotic"
+]
+
+BROAD_MEMBER_TERMS = [
+    "research", "development", "engineering", "technology", "prototype",
+    "demonstration", "innovation", "rfi", "sources sought", "solicitation",
+    "broad agency announcement", "baa", "commercial", "industry"
+]
+
+NON_ACTIONABLE_TERMS = [
+    "award notice", "justification", "exception to fair opportunity",
+    "intent to sole source", "sole source", "cancellation", "cancelled"
 ]
 
 
@@ -113,7 +128,7 @@ def _count_hits(text: str, terms: Iterable[str]) -> int:
 
 
 def _build_terms(selected_bundles: list[str], selected_keywords: list[str]) -> list[str]:
-    terms: list[str] = []
+    terms = []
     for bundle in selected_bundles:
         terms.extend(KEYWORD_BUNDLES[bundle])
     for keyword_group in selected_keywords:
@@ -125,15 +140,87 @@ def _deadline_dt(series: pd.Series) -> pd.Series:
     return pd.to_datetime(series, errors="coerce", utc=True)
 
 
-def _request_json(
-    session: requests.Session,
-    api_key: str,
-    posted_from: str,
-    posted_to: str,
-    agency: str,
-    naics: str,
-    limit: int,
-) -> tuple[int, dict]:
+def _combined_text(row: pd.Series) -> str:
+    fields = [
+        row.get("title", ""),
+        row.get("type", ""),
+        row.get("fullParentPathName", ""),
+        row.get("classificationCode", ""),
+    ]
+    return " ".join(str(x or "") for x in fields).lower()
+
+
+def _cosmic_relevance(row: pd.Series) -> pd.Series:
+    text = _combined_text(row)
+
+    direct_hits = _count_hits(text, COSMIC_DIRECT_ISAM)
+    ecosystem_hits = _count_hits(text, COSMIC_ECOSYSTEM)
+    enabler_hits = _count_hits(text, COSMIC_ENABLERS)
+    member_hits = _count_hits(text, BROAD_MEMBER_TERMS)
+    non_actionable_hits = _count_hits(text, NON_ACTIONABLE_TERMS)
+
+    # 100-point scale:
+    # 40 direct ISAM, 20 ecosystem, 20 enabling tech,
+    # 10 actionability, 10 broad member applicability.
+    direct_score = min(40, direct_hits * 10)
+    ecosystem_score = min(20, ecosystem_hits * 5)
+    enabler_score = min(20, enabler_hits * 4)
+
+    # Start actionable unless the notice clearly looks like a result/justification.
+    actionability_score = 10
+    if non_actionable_hits:
+        actionability_score = 2
+
+    # Passed deadlines should not rank as actionable.
+    if bool(row.get("deadline_passed", False)):
+        actionability_score = 0
+
+    member_score = min(10, member_hits * 3)
+    if direct_hits or ecosystem_hits or enabler_hits:
+        member_score = max(member_score, 4)
+
+    cosmic_score = (
+        direct_score
+        + ecosystem_score
+        + enabler_score
+        + actionability_score
+        + member_score
+    )
+
+    if cosmic_score >= 70:
+        priority = "Very High"
+    elif cosmic_score >= 50:
+        priority = "High"
+    elif cosmic_score >= 30:
+        priority = "Medium"
+    else:
+        priority = "Low"
+
+    reasons = []
+    if direct_hits:
+        reasons.append(f"Direct ISAM ({direct_hits})")
+    if ecosystem_hits:
+        reasons.append(f"Space ecosystem ({ecosystem_hits})")
+    if enabler_hits:
+        reasons.append(f"Enabling tech ({enabler_hits})")
+    if non_actionable_hits:
+        reasons.append("Low actionability notice")
+    if not reasons:
+        reasons.append("Weak COSMIC signal")
+
+    return pd.Series({
+        "cosmic_score": cosmic_score,
+        "cosmic_priority": priority,
+        "cosmic_direct_isam": direct_score,
+        "cosmic_ecosystem": ecosystem_score,
+        "cosmic_enablers": enabler_score,
+        "cosmic_actionability": actionability_score,
+        "cosmic_member_value": member_score,
+        "cosmic_reason": "; ".join(reasons),
+    })
+
+
+def _request_json(session, api_key, posted_from, posted_to, agency, naics, limit):
     params = {
         "api_key": api_key,
         "postedFrom": posted_from,
@@ -149,20 +236,11 @@ def _request_json(
     return response.status_code, response.json()
 
 
-def search_sam(
-    api_key: str,
-    agencies: list[str],
-    naics_labels: list[str],
-    selected_bundles: list[str],
-    selected_keywords: list[str],
-    config: SearchConfig,
-) -> tuple[pd.DataFrame, list[str]]:
+def search_sam(api_key, agencies, naics_labels, selected_bundles, selected_keywords, config):
     if not api_key or not api_key.startswith("SAM-"):
         raise ValueError("Missing or invalid SAM_API_KEY.")
-
     if not agencies:
         raise ValueError("Select at least one agency.")
-
     if not naics_labels:
         raise ValueError("Select at least one NAICS code.")
 
@@ -177,21 +255,15 @@ def search_sam(
     posted_from = (today - timedelta(days=config.days_back)).strftime("%m/%d/%Y")
     posted_to = today.strftime("%m/%d/%Y")
 
-    status_lines: list[str] = []
-    all_records: list[dict] = []
+    status_lines, all_records = [], []
 
     with requests.Session() as session:
         for agency in agencies:
             for naics in naics_codes:
                 try:
                     status, data = _request_json(
-                        session,
-                        api_key,
-                        posted_from,
-                        posted_to,
-                        agency,
-                        naics,
-                        config.limit_per_query,
+                        session, api_key, posted_from, posted_to,
+                        agency, naics, config.limit_per_query
                     )
                     status_lines.append(f"{agency} | {naics} | HTTP {status}")
                     if status == 200:
@@ -205,7 +277,6 @@ def search_sam(
 
     if "noticeId" in df.columns:
         df = df.drop_duplicates(subset=["noticeId"]).copy()
-
     if "title" not in df.columns:
         df["title"] = ""
 
@@ -231,19 +302,27 @@ def search_sam(
     if config.only_open:
         out = out[out["deadline_passed"] == False].copy()
 
-    out["score"] = (
+    # Layer 1: search-match score
+    out["search_score"] = (
         out["domain_hits"] * config.domain_weight
         + out["eng_hits"] * config.eng_weight
         + out["isam_hits"] * config.isam_boost
     )
+
+    # Keep old score name for compatibility with Slack and existing exports.
+    out["score"] = out["search_score"]
+
+    # Layer 2: COSMIC strategic relevance score
+    cosmic_cols = out.apply(_cosmic_relevance, axis=1)
+    out = pd.concat([out, cosmic_cols], axis=1)
 
     if "noticeId" in out.columns:
         out["sam_link"] = out["noticeId"].apply(
             lambda x: f"https://sam.gov/opp/{x}/view" if pd.notnull(x) else ""
         )
 
-    sort_cols = [c for c in ["score", "postedDate"] if c in out.columns]
-    if sort_cols:
-        out = out.sort_values(sort_cols, ascending=[False] * len(sort_cols))
+    # COSMIC score is now the primary ranking; search score breaks ties.
+    sort_cols = [c for c in ["cosmic_score", "search_score", "postedDate"] if c in out.columns]
+    out = out.sort_values(sort_cols, ascending=[False] * len(sort_cols))
 
     return out, status_lines
