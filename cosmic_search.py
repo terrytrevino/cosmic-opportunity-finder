@@ -7,6 +7,8 @@ from typing import Iterable
 import pandas as pd
 import requests
 
+COSMIC_SEARCH_VERSION = "1.1.0"
+
 API_BASE = "https://api.sam.gov/opportunities/v2/search"
 
 AGENCY_CHOICES = [
