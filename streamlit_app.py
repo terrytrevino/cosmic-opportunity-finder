@@ -310,7 +310,9 @@ if not results.empty:
 
     view_cols = [
         c for c in [
-            "score",
+            "cosmic_score",
+            "cosmic_priority",
+            "search_score",
             "status",
             "title",
             "postedDate",
@@ -326,6 +328,13 @@ if not results.empty:
         if c in results_view.columns
     ]
 
+    st.caption(
+        "Ranking uses two layers: **Search Match** measures how strongly the notice "
+        "matches the selected search terms; **COSMIC Score** ranks strategic relevance "
+        "to ISAM capabilities, the space ecosystem, enabling technologies, actionability, "
+        "and potential member value."
+    )
+
     st.dataframe(
         results_view[view_cols],
         use_container_width=True,
@@ -335,7 +344,15 @@ if not results.empty:
                 "SAM.gov",
                 display_text="Open opportunity",
             ),
-            "score": st.column_config.NumberColumn("Score"),
+            "cosmic_score": st.column_config.NumberColumn(
+                "COSMIC Score",
+                help="Strategic COSMIC relevance on a 0–100 scale."
+            ),
+            "cosmic_priority": st.column_config.TextColumn("COSMIC Priority"),
+            "search_score": st.column_config.NumberColumn(
+                "Search Match",
+                help="Original keyword/topic match score."
+            ),
             "status": st.column_config.TextColumn("Status"),
             "domain_hits": st.column_config.NumberColumn("Topic hits"),
             "isam_hits": st.column_config.NumberColumn("ISAM hits"),
@@ -381,7 +398,7 @@ if not results.empty:
                             "title": row.get("title", ""),
                             "agency": row.get("fullParentPathName", ""),
                             "deadline": row.get("responseDeadLine", ""),
-                            "score": str(row.get("score", "")),
+                            "score": str(row.get("cosmic_score", row.get("score", ""))),
                             "link": (row.get("sam_link", "") or "").strip(),
                         }
 
