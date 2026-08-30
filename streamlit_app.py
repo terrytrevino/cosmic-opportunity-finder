@@ -8,14 +8,12 @@ import requests
 import streamlit as st
 
 from cosmic_search import (
-    from cosmic_search import (
     AGENCY_CHOICES,
     KEYWORD_BUNDLES,
     KEYWORD_LIBRARY,
     NAICS_CHOICES,
     SearchConfig,
     search_sam,
-    COSMIC_SEARCH_VERSION,
 )
 
 st.set_page_config(
