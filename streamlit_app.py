@@ -99,8 +99,6 @@ def reset_filters():
 st.title("COSMIC Opportunity Finder")
 st.caption("SAM.gov Space + ISAM Opportunity Search")
 
-st.caption(f"Search engine version: {COSMIC_SEARCH_VERSION}")
-
 st.info(
     "How to use: choose one or more COSMIC Technical Topics or Focus Terms, "
     "adjust agencies/NAICS as needed, then click **Run Search**. "
