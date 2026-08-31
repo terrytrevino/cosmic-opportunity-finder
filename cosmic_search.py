@@ -7,8 +7,6 @@ from typing import Iterable
 import pandas as pd
 import requests
 
-COSMIC_SEARCH_VERSION = "1.1.0"
-
 API_BASE = "https://api.sam.gov/opportunities/v2/search"
 
 AGENCY_CHOICES = [
@@ -22,12 +20,75 @@ AGENCY_CHOICES = [
 ]
 
 NAICS_CHOICES = {
-    "336414  Space vehicle / missile & space manufacturing": "336414",
+    # Core spacecraft / aerospace
+    "336414  Guided missile and space vehicle manufacturing": "336414",
+    "336415  Space vehicle propulsion units and parts": "336415",
+    "336419  Other guided missile and space vehicle parts / auxiliary equipment": "336419",
+
+    # Engineering, R&D, test
     "541330  Engineering services": "541330",
-    "541715  R&D engineering/physical sciences": "541715",
-    "334511  Search/detection/navigation instruments": "334511",
-    "334220  Communications equipment": "334220",
+    "541715  Physical / engineering / life sciences R&D": "541715",
+    "541713  Nanotechnology R&D": "541713",
+    "541380  Testing laboratories and services": "541380",
+
+    # Sensors, navigation, communications hardware
+    "334511  Search / detection / navigation / guidance instruments": "334511",
+    "334220  Wireless communications equipment / satellite hardware": "334220",
+    "334413  Semiconductor and related device manufacturing": "334413",
+    "334416  Capacitor / resistor / coil / transformer manufacturing": "334416",
+
+    # Satellite communications / tracking
+    "517410  Satellite telecommunications": "517410",
+    "517810  Satellite tracking / telemetry / specialized telecommunications": "517810",
+
+    # Software, systems integration, digital
+    "541511  Custom computer programming services": "541511",
+    "541512  Computer systems design services": "541512",
+    "541519  Other computer related services": "541519",
+
+    # Broader aerospace ecosystem
+    "336411  Aircraft manufacturing": "336411",
+    "336412  Aircraft engine and engine parts manufacturing": "336412",
+    "336413  Other aircraft parts and auxiliary equipment manufacturing": "336413",
+
+    # Technical / logistics support
+    "541690  Other scientific and technical consulting services": "541690",
+    "541614  Process, physical distribution, and logistics consulting": "541614",
 }
+
+NAICS_GROUPS = {
+    "Core COSMIC": [
+        "336414  Guided missile and space vehicle manufacturing",
+        "336415  Space vehicle propulsion units and parts",
+        "336419  Other guided missile and space vehicle parts / auxiliary equipment",
+        "541330  Engineering services",
+        "541715  Physical / engineering / life sciences R&D",
+        "541380  Testing laboratories and services",
+        "334511  Search / detection / navigation / guidance instruments",
+        "334220  Wireless communications equipment / satellite hardware",
+        "517410  Satellite telecommunications",
+        "517810  Satellite tracking / telemetry / specialized telecommunications",
+    ],
+
+    "Extended Space Ecosystem": [
+        "334413  Semiconductor and related device manufacturing",
+        "334416  Capacitor / resistor / coil / transformer manufacturing",
+        "541713  Nanotechnology R&D",
+        "541511  Custom computer programming services",
+        "541512  Computer systems design services",
+        "541519  Other computer related services",
+        "541690  Other scientific and technical consulting services",
+        "541614  Process, physical distribution, and logistics consulting",
+        "336411  Aircraft manufacturing",
+        "336412  Aircraft engine and engine parts manufacturing",
+        "336413  Other aircraft parts and auxiliary equipment manufacturing",
+    ],
+}
+
+NAICS_GROUPS["Core + Extended"] = (
+    NAICS_GROUPS["Core COSMIC"]
+    + NAICS_GROUPS["Extended Space Ecosystem"]
+)
 
 KEYWORD_LIBRARY = {
     "Refueling / Depot": ["refuel", "refueling", "propellant", "fuel depot", "depot", "tanker", "transfer"],
