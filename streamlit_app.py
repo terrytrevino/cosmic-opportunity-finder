@@ -12,6 +12,7 @@ from cosmic_search import (
     KEYWORD_BUNDLES,
     KEYWORD_LIBRARY,
     NAICS_CHOICES,
+    NAICS_GROUPS,
     SearchConfig,
     search_sam,
 )
@@ -33,11 +34,7 @@ DEFAULT_AGENCIES = [
     "DARPA",
 ]
 
-DEFAULT_NAICS = [
-    "336414  Space vehicle / missile & space manufacturing",
-    "541330  Engineering services",
-    "541715  R&D engineering/physical sciences",
-]
+DEFAULT_NAICS = NAICS_GROUPS["Core COSMIC"].copy()
 
 DEFAULT_TOPICS = []
 DEFAULT_FOCUS = []
@@ -65,6 +62,7 @@ defaults = {
     "isam_boost": 5,
     "top_n": 5,
     "agencies": DEFAULT_AGENCIES.copy(),
+    "naics_scope": "Core COSMIC",
     "naics_labels": DEFAULT_NAICS.copy(),
     "bundles": DEFAULT_TOPICS.copy(),
     "focus_terms": DEFAULT_FOCUS.copy(),
@@ -73,6 +71,12 @@ defaults = {
 for key, value in defaults.items():
     if key not in st.session_state:
         st.session_state[key] = value
+
+
+def apply_naics_scope(scope_name: str):
+    st.session_state.naics_scope = scope_name
+    if scope_name in NAICS_GROUPS:
+        st.session_state.naics_labels = NAICS_GROUPS[scope_name].copy()
 
 
 def reset_filters():
@@ -85,6 +89,7 @@ def reset_filters():
     st.session_state.isam_boost = 5
     st.session_state.top_n = 5
     st.session_state.agencies = DEFAULT_AGENCIES.copy()
+    st.session_state.naics_scope = "Core COSMIC"
     st.session_state.naics_labels = DEFAULT_NAICS.copy()
     st.session_state.bundles = DEFAULT_TOPICS.copy()
     st.session_state.focus_terms = DEFAULT_FOCUS.copy()
@@ -200,8 +205,32 @@ st.multiselect(
 )
 
 st.subheader("2. NAICS Industries")
+st.caption(
+    "Use a COSMIC preset for a fast search, or switch to Custom and select individual industries."
+)
+
+scope_col1, scope_col2, scope_col3 = st.columns(3)
+
+with scope_col1:
+    if st.button("Use Core COSMIC", use_container_width=True):
+        apply_naics_scope("Core COSMIC")
+        st.rerun()
+
+with scope_col2:
+    if st.button("Use Core + Extended", use_container_width=True):
+        apply_naics_scope("Core + Extended")
+        st.rerun()
+
+with scope_col3:
+    if st.button("Clear / Custom", use_container_width=True):
+        st.session_state.naics_scope = "Custom"
+        st.session_state.naics_labels = []
+        st.rerun()
+
+st.write(f"**NAICS scope:** {st.session_state.naics_scope}")
+
 st.multiselect(
-    "Select one or more NAICS categories",
+    "Selected NAICS categories",
     options=list(NAICS_CHOICES.keys()),
     key="naics_labels",
 )
@@ -226,6 +255,7 @@ st.multiselect(
 
 with st.expander("Current search setup", expanded=False):
     st.write("**Agencies:**", st.session_state.agencies or "None selected")
+    st.write("**NAICS scope:**", st.session_state.naics_scope)
     st.write("**NAICS:**", st.session_state.naics_labels or "None selected")
     st.write("**Technical Topics:**", st.session_state.bundles or "None selected")
     st.write("**Focus Terms:**", st.session_state.focus_terms or "None selected")
