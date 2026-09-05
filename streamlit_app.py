@@ -322,85 +322,27 @@ st.markdown(
 # COSMIC OFFICIAL HEADER
 # ============================================================
 
-logo_b64 = get_base64_image(
-    "assets/cosmic_logo.png"
+header_left, header_right = st.columns(
+    [1.1, 2.2],
+    vertical_alignment="center",
 )
 
-st.markdown(
-f"""
-<div style="
-    padding: 24px 30px 26px 30px;
-    margin-bottom: 18px;
-    border-radius: 18px;
-    background: rgba(5, 18, 38, 0.82);
-    border: 1px solid rgba(94, 162, 255, 0.55);
-    box-shadow: 0 0 22px rgba(47, 91, 255, 0.10);
-    backdrop-filter: blur(8px);
-">
+with header_left:
+    st.image(
+        "assets/cosmic_logo.png",
+        width=300,
+    )
 
-    <div style="
-        display: flex;
-        align-items: center;
-        gap: 28px;
-        flex-wrap: wrap;
-    ">
+with header_right:
+    st.markdown(
+        """
+### O P P O R T U N I T Y   F I N D E R
 
-        <div style="
-            flex: 0 0 auto;
-        ">
-            <img
-                src="data:image/png;base64,{logo_b64}"
-                style="
-                    max-width: 310px;
-                    width: 100%;
-                    height: auto;
-                    display: block;
-                "
-            >
-        </div>
+**SPACE • ISAM • INNOVATION • IMPACT**
 
-        <div style="
-            flex: 1 1 420px;
-        ">
-
-            <div style="
-                font-size: 25px;
-                font-weight: 500;
-                letter-spacing: 6px;
-                color: #F7FAFF;
-            ">
-                OPPORTUNITY FINDER
-            </div>
-
-            <div style="
-                margin-top: 12px;
-                font-size: 13px;
-                font-weight: 600;
-                letter-spacing: 3px;
-                color: #8CC7FF;
-            ">
-                SPACE • ISAM • INNOVATION • IMPACT
-            </div>
-
-            <div style="
-                margin-top: 12px;
-                font-size: 14px;
-                color: #C9D8EE;
-                line-height: 1.5;
-            ">
-                Discovering actionable federal opportunities across
-                the in-space servicing, assembly, manufacturing,
-                and broader space ecosystem.
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-""",
-unsafe_allow_html=True,
-)
+Discovering actionable federal opportunities across the in-space servicing, assembly, manufacturing, and broader space ecosystem.
+        """
+    )
 
 # ============================================================
 # COSMIC LINKS
