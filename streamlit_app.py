@@ -55,7 +55,7 @@ def get_base64_image(path):
 
 
 background_b64 = get_base64_image(
-    "assets/cosmic_background.png"
+    "cosmic_background.png"
 )
 
 
