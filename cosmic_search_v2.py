@@ -246,13 +246,13 @@ def search_sam(api_key, psc_labels, notice_labels, config):
 
     now = datetime.now(timezone.utc)
 
-    lookback_days = min(config.days_back, 365)
+    lookback_days = min(config.days_back, 364)
     posted_from = (now - timedelta(days=lookback_days)).strftime("%m/%d/%Y")
     posted_to = now.strftime("%m/%d/%Y")
 
     deadline_from = now.strftime("%m/%d/%Y")
     deadline_to = (
-        now + timedelta(days=min(config.response_days_forward, 365))
+        now + timedelta(days=min(config.response_days_forward, 364))
     ).strftime("%m/%d/%Y")
 
     all_records = []
@@ -330,7 +330,7 @@ def search_sam(api_key, psc_labels, notice_labels, config):
         df["responseDeadLine_dt"] = _response_deadline_series(df)
 
         now_ts = pd.Timestamp.now(tz="UTC")
-        max_due = now_ts + pd.Timedelta(days=min(config.response_days_forward, 365))
+        max_due = now_ts + pd.Timedelta(days=min(config.response_days_forward, 364))
 
         df = df[
             df["responseDeadLine_dt"].notna()
