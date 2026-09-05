@@ -130,48 +130,45 @@ st.markdown(
 # ============================================================
 
 st.markdown(
-    """
-    <div style="
-        padding: 28px 32px;
-        margin-bottom: 18px;
-        border-radius: 18px;
-        background: rgba(6, 20, 38, 0.76);
-        border: 1px solid rgba(93, 161, 255, 0.28);
-        backdrop-filter: blur(8px);
-    ">
+"""<div style="
+padding: 28px 32px;
+margin-bottom: 18px;
+border-radius: 18px;
+background: rgba(6, 20, 38, 0.76);
+border: 1px solid rgba(93, 161, 255, 0.28);
+backdrop-filter: blur(8px);
+">
 
-        <div style="
-            font-size: 48px;
-            font-weight: 800;
-            letter-spacing: 4px;
-            color: white;
-        ">
-            COSMIC
-        </div>
+<div style="
+font-size: 48px;
+font-weight: 800;
+letter-spacing: 4px;
+color: white;
+">
+COSMIC
+</div>
 
-        <div style="
-            font-size: 23px;
-            letter-spacing: 5px;
-            color: #dceaff;
-            margin-top: -4px;
-        ">
-            OPPORTUNITY FINDER
-        </div>
+<div style="
+font-size: 23px;
+letter-spacing: 5px;
+color: #dceaff;
+margin-top: -4px;
+">
+OPPORTUNITY FINDER
+</div>
 
-        <div style="
-            font-size: 14px;
-            letter-spacing: 3px;
-            color: #8fc7ff;
-            margin-top: 12px;
-        ">
-            SPACE • ISAM • INNOVATION • IMPACT
-        </div>
+<div style="
+font-size: 14px;
+letter-spacing: 3px;
+color: #8fc7ff;
+margin-top: 12px;
+">
+SPACE • ISAM • INNOVATION • IMPACT
+</div>
 
-    </div>
-    """,
-    unsafe_allow_html=True,
+</div>""",
+unsafe_allow_html=True,
 )
-
 
 # ============================================================
 # COSMIC LINKS
