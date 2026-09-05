@@ -319,47 +319,86 @@ st.markdown(
     unsafe_allow_html=True,
 )
 # ============================================================
-# COSMIC HERO / TITLE
+# COSMIC OFFICIAL HEADER
 # ============================================================
 
+logo_b64 = get_base64_image(
+    "assets/cosmic_logo.png"
+)
+
 st.markdown(
-"""<div style="
-padding: 28px 32px;
-margin-bottom: 18px;
-border-radius: 18px;
-background: rgba(6, 20, 38, 0.76);
-border: 1px solid rgba(93, 161, 255, 0.28);
-backdrop-filter: blur(8px);
-">
-
+f"""
 <div style="
-font-size: 48px;
-font-weight: 800;
-letter-spacing: 4px;
-color: white;
+    padding: 24px 30px 26px 30px;
+    margin-bottom: 18px;
+    border-radius: 18px;
+    background: rgba(5, 18, 38, 0.82);
+    border: 1px solid rgba(94, 162, 255, 0.55);
+    box-shadow: 0 0 22px rgba(47, 91, 255, 0.10);
+    backdrop-filter: blur(8px);
 ">
-COSMIC
-</div>
 
-<div style="
-font-size: 23px;
-letter-spacing: 5px;
-color: #dceaff;
-margin-top: -4px;
-">
-OPPORTUNITY FINDER
-</div>
+    <div style="
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        flex-wrap: wrap;
+    ">
 
-<div style="
-font-size: 14px;
-letter-spacing: 3px;
-color: #8fc7ff;
-margin-top: 12px;
-">
-SPACE • ISAM • INNOVATION • IMPACT
-</div>
+        <div style="
+            flex: 0 0 auto;
+        ">
+            <img
+                src="data:image/png;base64,{logo_b64}"
+                style="
+                    max-width: 310px;
+                    width: 100%;
+                    height: auto;
+                    display: block;
+                "
+            >
+        </div>
 
-</div>""",
+        <div style="
+            flex: 1 1 420px;
+        ">
+
+            <div style="
+                font-size: 25px;
+                font-weight: 500;
+                letter-spacing: 6px;
+                color: #F7FAFF;
+            ">
+                OPPORTUNITY FINDER
+            </div>
+
+            <div style="
+                margin-top: 12px;
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 3px;
+                color: #8CC7FF;
+            ">
+                SPACE • ISAM • INNOVATION • IMPACT
+            </div>
+
+            <div style="
+                margin-top: 12px;
+                font-size: 14px;
+                color: #C9D8EE;
+                line-height: 1.5;
+            ">
+                Discovering actionable federal opportunities across
+                the in-space servicing, assembly, manufacturing,
+                and broader space ecosystem.
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+""",
 unsafe_allow_html=True,
 )
 
