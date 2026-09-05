@@ -64,7 +64,21 @@ st.markdown(
     <style>
 
     /* ======================================================
-       COSMIC BACKGROUND
+       COSMIC COLOR PALETTE
+       ====================================================== */
+
+    :root {{
+        --cosmic-deep-navy: #071426;
+        --cosmic-panel-navy: #0C1D32;
+        --cosmic-blue: #2F5BFF;
+        --cosmic-electric-blue: #5EA2FF;
+        --cosmic-light-blue: #8CC7FF;
+        --cosmic-white: #F7FAFF;
+    }}
+
+
+    /* ======================================================
+       BACKGROUND
        ====================================================== */
 
     .stApp {{
@@ -92,8 +106,8 @@ st.markdown(
        ====================================================== */
 
     section[data-testid="stSidebar"] {{
-        background: rgba(5, 18, 38, 0.90);
-        border-right: 1px solid #4da3ff;
+        background: rgba(7, 20, 38, 0.92);
+        border-right: 1px solid var(--cosmic-electric-blue);
     }}
 
 
@@ -102,76 +116,137 @@ st.markdown(
        ====================================================== */
 
     h1, h2, h3, p, label {{
-        color: #ffffff;
+        color: var(--cosmic-white);
     }}
 
 
     /* ======================================================
-       INPUT / SELECT BOXES
+       SELECT / INPUT BOXES
        ====================================================== */
 
     div[data-baseweb="select"] > div {{
-        background-color: rgba(7, 24, 48, 0.94);
-        border: 1px solid #4da3ff;
-        color: white;
+        background-color: rgba(12, 29, 50, 0.94);
+        border: 1px solid var(--cosmic-electric-blue);
+        color: var(--cosmic-white);
     }}
 
     div[data-baseweb="input"] > div {{
-        background-color: rgba(7, 24, 48, 0.94);
-        border: 1px solid #4da3ff;
-        color: white;
+        background-color: rgba(12, 29, 50, 0.94);
+        border: 1px solid var(--cosmic-electric-blue);
+        color: var(--cosmic-white);
     }}
 
 
     /* ======================================================
-       MULTISELECT TAGS / SELECTED OPTIONS
-       Bright COSMIC blue for strong visual distinction
+       MULTISELECT TAGS
+       Replaces the red/orange tags with COSMIC blue
        ====================================================== */
 
     span[data-baseweb="tag"] {{
-        background-color: #147df5 !important;
-        color: #ffffff !important;
-        border: 1px solid #8bc4ff !important;
-        font-weight: 600 !important;
+        background: linear-gradient(
+            135deg,
+            #2748D8,
+            var(--cosmic-blue)
+        ) !important;
+
+        color: var(--cosmic-white) !important;
+
+        border: 1px solid var(--cosmic-light-blue) !important;
+
+        border-radius: 7px !important;
+
+        font-weight: 650 !important;
+
+        box-shadow:
+            0 0 0 1px rgba(140, 199, 255, 0.10),
+            0 0 8px rgba(47, 91, 255, 0.18);
+    }}
+
+
+    /* X inside multiselect tag */
+    span[data-baseweb="tag"] svg {{
+        fill: var(--cosmic-white) !important;
     }}
 
 
     /* ======================================================
-       RADIO BUTTON LABELS
+       RADIO BUTTON GROUP
        ====================================================== */
 
     div[data-testid="stRadio"] label {{
         background: rgba(7, 25, 50, 0.90);
-        border: 1px solid #4da3ff;
+        border: 1px solid var(--cosmic-electric-blue);
         border-radius: 8px;
         padding: 8px 12px;
         margin-right: 8px;
+        color: var(--cosmic-white);
+    }}
+
+
+    /* Radio circle / selected accent */
+    div[data-testid="stRadio"] input:checked + div {{
+        border-color: var(--cosmic-light-blue) !important;
     }}
 
 
     /* ======================================================
-       BUTTONS
+       REGULAR BUTTONS
        ====================================================== */
 
     div.stButton > button {{
-        background: #126fe5;
-        color: #ffffff;
-        border: 1px solid #79baff;
+        background: linear-gradient(
+            135deg,
+            #2349D8,
+            var(--cosmic-blue)
+        );
+
+        color: var(--cosmic-white);
+
+        border: 1px solid var(--cosmic-light-blue);
+
         border-radius: 8px;
+
         font-weight: 700;
+
+        box-shadow:
+            0 0 10px rgba(47, 91, 255, 0.18);
     }}
 
     div.stButton > button:hover {{
-        background: #258cff;
-        color: #ffffff;
-        border: 1px solid #ffffff;
+        background: linear-gradient(
+            135deg,
+            #3567FF,
+            var(--cosmic-electric-blue)
+        );
+
+        color: #FFFFFF;
+
+        border: 1px solid #FFFFFF;
+
+        box-shadow:
+            0 0 14px rgba(94, 162, 255, 0.30);
     }}
 
+
+    /* ======================================================
+       PRIMARY BUTTON
+       ====================================================== */
+
     div.stButton > button[kind="primary"] {{
-        background: #147df5;
-        color: #ffffff;
-        border: 2px solid #a9d5ff;
+        background: linear-gradient(
+            90deg,
+            #2F5BFF,
+            #4C65FF
+        );
+
+        color: #FFFFFF;
+
+        border: 2px solid var(--cosmic-light-blue);
+
         font-weight: 800;
+
+        box-shadow:
+            0 0 14px rgba(47, 91, 255, 0.25);
     }}
 
 
@@ -180,21 +255,42 @@ st.markdown(
        ====================================================== */
 
     div[data-testid="stLinkButton"] a {{
-        background: #126fe5 !important;
-        color: #ffffff !important;
-        border: 1px solid #79baff !important;
+        background: linear-gradient(
+            135deg,
+            #2349D8,
+            var(--cosmic-blue)
+        ) !important;
+
+        color: #FFFFFF !important;
+
+        border: 1px solid var(--cosmic-light-blue) !important;
+
         border-radius: 8px !important;
+
         font-weight: 700 !important;
+
+        box-shadow:
+            0 0 10px rgba(47, 91, 255, 0.18);
+    }}
+
+    div[data-testid="stLinkButton"] a:hover {{
+        background: linear-gradient(
+            135deg,
+            #3567FF,
+            var(--cosmic-electric-blue)
+        ) !important;
+
+        border: 1px solid #FFFFFF !important;
     }}
 
 
     /* ======================================================
-       ALERT / INFORMATION PANELS
+       ALERT / INFO BOXES
        ====================================================== */
 
     div[data-testid="stAlert"] {{
-        background: rgba(6, 23, 46, 0.90);
-        border: 1px solid rgba(77, 163, 255, 0.65);
+        background: rgba(12, 29, 50, 0.90);
+        border: 1px solid var(--cosmic-electric-blue);
         border-radius: 12px;
     }}
 
@@ -204,25 +300,24 @@ st.markdown(
        ====================================================== */
 
     div[data-testid="stDataFrame"] {{
-        background: rgba(5, 18, 38, 0.92);
-        border: 1px solid rgba(77, 163, 255, 0.55);
+        background: rgba(7, 20, 38, 0.92);
+        border: 1px solid rgba(94, 162, 255, 0.55);
         border-radius: 12px;
     }}
 
 
     /* ======================================================
-       SLIDERS
+       SLIDERS / CONTROL ACCENTS
        ====================================================== */
 
     div[data-testid="stSlider"] {{
-        color: #ffffff;
+        color: var(--cosmic-white);
     }}
 
     </style>
     """,
     unsafe_allow_html=True,
 )
-
 # ============================================================
 # COSMIC HERO / TITLE
 # ============================================================
