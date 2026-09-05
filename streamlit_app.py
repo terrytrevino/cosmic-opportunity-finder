@@ -328,9 +328,18 @@ header_left, header_right = st.columns(
 )
 
 with header_left:
-    st.image(
-        "assets/cosmic_logo.png",
-        width=300,
+    st.markdown(
+        """
+        <div style="
+            font-size: 44px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            color: #F7FAFF;
+        ">
+            COSMIC
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
 with header_right:
