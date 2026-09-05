@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime
 import time
-
 import pandas as pd
 import requests
 import streamlit as st
@@ -13,8 +12,16 @@ from cosmic_search import (
     KEYWORD_LIBRARY,
     NAICS_CHOICES,
     NAICS_GROUPS,
-    SearchConfig,
-    search_sam,
+    SearchConfig as LegacySearchConfig,
+    search_sam as search_sam_legacy,
+)
+
+from cosmic_search_v2 import (
+    DEFAULT_PSC_LABELS,
+    NOTICE_TYPES,
+    PSC_CHOICES,
+    SearchConfig as V2SearchConfig,
+    search_sam as search_sam_v2,
 )
 
 st.set_page_config(
@@ -23,440 +30,289 @@ st.set_page_config(
     layout="wide",
 )
 
-# ------------------------------------------------------------
-# Defaults
-# ------------------------------------------------------------
+st.title("COSMIC Opportunity Finder")
+st.caption("SAM.gov Space + ISAM Opportunity Search")
 
-DEFAULT_AGENCIES = [
-    "NASA",
-    "DEPT OF THE AIR FORCE",
-    "SPACE DEVELOPMENT AGENCY",
-    "DARPA",
-]
-
-DEFAULT_NAICS = NAICS_GROUPS["Core COSMIC"].copy()
-
-DEFAULT_TOPICS = []
-DEFAULT_FOCUS = []
-
-# ------------------------------------------------------------
-# Secrets
-# ------------------------------------------------------------
+search_mode = st.radio(
+    "Search mode",
+    ["PSC + Deadline Search v2", "Legacy Agency + NAICS Search v1"],
+    index=0,
+    horizontal=True,
+)
 
 sam_api_key = st.secrets.get("SAM_API_KEY", "")
 slack_webhook_url = st.secrets.get("SLACK_WEBHOOK_URL", "")
 
-# ------------------------------------------------------------
-# Session state initialization
-# ------------------------------------------------------------
-
-defaults = {
-    "results": pd.DataFrame(),
-    "status_lines": [],
-    "days_back": 60,
-    "limit_per_query": 100,
-    "only_open": True,
-    "strict_eng": False,
-    "domain_weight": 2,
-    "eng_weight": 1,
-    "isam_boost": 5,
-    "top_n": 5,
-    "agencies": DEFAULT_AGENCIES.copy(),
-    "naics_scope": "Core COSMIC",
-    "naics_labels": DEFAULT_NAICS.copy(),
-    "bundles": DEFAULT_TOPICS.copy(),
-    "focus_terms": DEFAULT_FOCUS.copy(),
-}
-
-for key, value in defaults.items():
-    if key not in st.session_state:
-        st.session_state[key] = value
-
-
-def apply_naics_scope(scope_name: str):
-    st.session_state.naics_scope = scope_name
-    if scope_name in NAICS_GROUPS:
-        st.session_state.naics_labels = NAICS_GROUPS[scope_name].copy()
-
-
-def reset_filters():
-    st.session_state.days_back = 60
-    st.session_state.limit_per_query = 100
-    st.session_state.only_open = True
-    st.session_state.strict_eng = False
-    st.session_state.domain_weight = 2
-    st.session_state.eng_weight = 1
-    st.session_state.isam_boost = 5
-    st.session_state.top_n = 5
-    st.session_state.agencies = DEFAULT_AGENCIES.copy()
-    st.session_state.naics_scope = "Core COSMIC"
-    st.session_state.naics_labels = DEFAULT_NAICS.copy()
-    st.session_state.bundles = DEFAULT_TOPICS.copy()
-    st.session_state.focus_terms = DEFAULT_FOCUS.copy()
-    st.session_state.results = pd.DataFrame()
-    st.session_state.status_lines = []
-
-
-# ------------------------------------------------------------
-# Header
-# ------------------------------------------------------------
-
-st.title("COSMIC Opportunity Finder")
-st.caption("SAM.gov Space + ISAM Opportunity Search")
-
-st.info(
-    "How to use: choose one or more COSMIC Technical Topics or Focus Terms, "
-    "adjust agencies/NAICS as needed, then click **Run Search**. "
-    "Review the results, open individual SAM.gov notices, download the full CSV, "
-    "or post the top-ranked items to Slack."
-)
-
-st.caption(
-    "Slack publishing is currently connected to the Space 4 All test workflow. "
-    "The production COSMIC Opportunity Marketplace channel can be substituted later "
-    "without changing the search engine."
-)
-
 if not sam_api_key:
-    st.warning(
-        "SAM_API_KEY is not configured. Add it in Streamlit Secrets before running searches."
+    st.warning("SAM_API_KEY is not configured in Streamlit Secrets.")
+
+
+def post_rows_to_slack(results: pd.DataFrame, top_n: int, score_col: str):
+    if results is None or results.empty:
+        st.warning("No results available to post.")
+        return
+    if not slack_webhook_url:
+        st.error("SLACK_WEBHOOK_URL is not configured.")
+        return
+
+    posted = 0
+    with st.spinner("Posting to Slack..."):
+        for _, row in results.head(top_n).iterrows():
+            payload = {
+                "title": row.get("title", ""),
+                "agency": row.get("fullParentPathName", ""),
+                "deadline": row.get("responseDeadLine", ""),
+                "score": str(row.get(score_col, row.get("score", ""))),
+                "link": str(row.get("sam_link", "") or "").strip(),
+            }
+            try:
+                r = requests.post(slack_webhook_url, json=payload, timeout=30)
+                if r.status_code == 200:
+                    posted += 1
+                else:
+                    st.warning(f"Slack returned HTTP {r.status_code}: {r.text[:160]}")
+            except requests.RequestException as exc:
+                st.warning(f"Slack post failed: {exc}")
+            time.sleep(1.05)
+
+    st.success(f"Posted {posted}/{min(top_n, len(results))} opportunities.")
+
+
+def render_v2():
+    st.info(
+        "Recommended search. v2 uses **PSC codes** as the primary retrieval signal "
+        "and **space** as a secondary sniffer. Agency and NAICS remain visible as metadata "
+        "but are no longer search gates."
     )
 
-# ------------------------------------------------------------
-# Sidebar controls
-# ------------------------------------------------------------
+    if "v2_results" not in st.session_state:
+        st.session_state.v2_results = pd.DataFrame()
+    if "v2_status" not in st.session_state:
+        st.session_state.v2_status = []
 
-with st.sidebar:
-    st.header("Search Controls")
+    with st.sidebar:
+        st.header("v2 Search Controls")
+        days_back = st.slider("Published lookback (days)", 30, 730, 365, 30, key="v2_days")
+        response_days = st.slider("Response deadline horizon (days)", 30, 365, 365, 15, key="v2_due")
+        limit_per_query = st.slider("Results per API page", 25, 200, 100, 25, key="v2_limit")
+        max_pages = st.slider("Max pages per search pass", 1, 5, 2, key="v2_pages")
+        suppress_stale = st.checkbox("Suppress stale / omnibus notices", True, key="v2_stale")
+        top_n = st.slider("Top N to post to Slack", 1, 10, 3, key="v2_topn")
 
-    st.slider(
-        "Days back",
-        7,
-        365,
-        step=7,
-        key="days_back",
+    st.subheader("1. Product and Service Codes")
+    selected_pscs = st.multiselect(
+        "Select PSCs",
+        list(PSC_CHOICES.keys()),
+        default=DEFAULT_PSC_LABELS,
+        key="v2_pscs",
     )
 
-    st.slider(
-        "Limit per query",
-        10,
-        200,
-        step=10,
-        key="limit_per_query",
+    st.subheader("2. Notice Types")
+    selected_notices = st.multiselect(
+        "Select notice types",
+        list(NOTICE_TYPES.keys()),
+        default=list(NOTICE_TYPES.keys()),
+        key="v2_notices",
     )
 
-    st.subheader("Search behavior")
-
-    st.checkbox(
-        "Only likely-open",
-        key="only_open",
-    )
-
-    st.checkbox(
-        "Require engineering term in title",
-        key="strict_eng",
-    )
-
-    st.subheader("Scoring")
-
-    st.slider(
-        "Topic weight",
-        0,
-        5,
-        key="domain_weight",
-    )
-
-    st.slider(
-        "Engineering weight",
-        0,
-        5,
-        key="eng_weight",
-    )
-
-    st.slider(
-        "ISAM boost",
-        0,
-        10,
-        key="isam_boost",
-    )
-
-    st.slider(
-        "Top N to post to Slack",
-        1,
-        30,
-        key="top_n",
-    )
-
-    st.button(
-        "Reset filters",
-        on_click=reset_filters,
-        use_container_width=True,
-    )
-
-# ------------------------------------------------------------
-# Main filters
-# ------------------------------------------------------------
-
-st.subheader("1. Agencies")
-st.multiselect(
-    "Select one or more agencies",
-    options=AGENCY_CHOICES,
-    key="agencies",
-)
-
-st.subheader("2. NAICS Industries")
-st.caption(
-    "Use a COSMIC preset for a fast search, or switch to Custom and select individual industries."
-)
-
-scope_col1, scope_col2, scope_col3 = st.columns(3)
-
-with scope_col1:
-    if st.button("Use Core COSMIC", use_container_width=True):
-        apply_naics_scope("Core COSMIC")
-        st.rerun()
-
-with scope_col2:
-    if st.button("Use Core + Extended", use_container_width=True):
-        apply_naics_scope("Core + Extended")
-        st.rerun()
-
-with scope_col3:
-    if st.button("Clear / Custom", use_container_width=True):
-        st.session_state.naics_scope = "Custom"
-        st.session_state.naics_labels = []
-        st.rerun()
-
-st.write(f"**NAICS scope:** {st.session_state.naics_scope}")
-
-st.multiselect(
-    "Selected NAICS categories",
-    options=list(NAICS_CHOICES.keys()),
-    key="naics_labels",
-)
-
-st.subheader("3. COSMIC Technical Topics")
-st.multiselect(
-    "Choose technical topics",
-    options=list(KEYWORD_BUNDLES.keys()),
-    key="bundles",
-)
-
-st.subheader("4. Optional Focus Terms")
-st.multiselect(
-    "Add narrower focus phrases if desired",
-    options=list(KEYWORD_LIBRARY.keys()),
-    key="focus_terms",
-)
-
-# ------------------------------------------------------------
-# Search summary
-# ------------------------------------------------------------
-
-with st.expander("Current search setup", expanded=False):
-    st.write("**Agencies:**", st.session_state.agencies or "None selected")
-    st.write("**NAICS scope:**", st.session_state.naics_scope)
-    st.write("**NAICS:**", st.session_state.naics_labels or "None selected")
-    st.write("**Technical Topics:**", st.session_state.bundles or "None selected")
-    st.write("**Focus Terms:**", st.session_state.focus_terms or "None selected")
+    st.subheader("3. Retrieval Logic")
     st.write(
-        f"**Window:** {st.session_state.days_back} days | "
-        f"**Only open:** {st.session_state.only_open} | "
-        f"**Strict engineering:** {st.session_state.strict_eng}"
+        "**Primary:** PSC codes. **Secondary:** `space` keyword sniffer. "
+        "Results are deduplicated by Notice ID, filtered by response date, "
+        "then ranked using PSC, title, description, ISAM, space, and enabling signals."
     )
 
-# ------------------------------------------------------------
-# Search button
-# ------------------------------------------------------------
-
-run_search_btn = st.button(
-    "Run Search",
-    type="primary",
-    use_container_width=True,
-)
-
-if run_search_btn:
-    config = SearchConfig(
-        days_back=st.session_state.days_back,
-        limit_per_query=st.session_state.limit_per_query,
-        only_open=st.session_state.only_open,
-        strict_eng=st.session_state.strict_eng,
-        domain_weight=st.session_state.domain_weight,
-        eng_weight=st.session_state.eng_weight,
-        isam_boost=st.session_state.isam_boost,
-    )
-
-    try:
-        with st.spinner("Searching SAM.gov..."):
-            results, status_lines = search_sam(
-                api_key=sam_api_key,
-                agencies=st.session_state.agencies,
-                naics_labels=st.session_state.naics_labels,
-                selected_bundles=st.session_state.bundles,
-                selected_keywords=st.session_state.focus_terms,
-                config=config,
-            )
-
-        st.session_state.results = results
-        st.session_state.status_lines = status_lines
-
-    except Exception as exc:
-        st.error(str(exc))
-
-# ------------------------------------------------------------
-# API request status
-# ------------------------------------------------------------
-
-if st.session_state.status_lines:
-    with st.expander("API request status"):
-        for line in st.session_state.status_lines:
-            st.text(line)
-
-# ------------------------------------------------------------
-# Results
-# ------------------------------------------------------------
-
-results = st.session_state.results
-
-if not results.empty:
-    st.success(f"{len(results)} filtered opportunities found")
-
-    # Add a plain-language status field for users
-    results_view = results.copy()
-
-    if "deadline_passed" in results_view.columns:
-        results_view["status"] = results_view["deadline_passed"].map(
-            {True: "Deadline passed", False: "Open / likely open"}
+    if st.button("Run v2 Search", type="primary", use_container_width=True, key="run_v2"):
+        cfg = V2SearchConfig(
+            days_back=days_back,
+            response_days_forward=response_days,
+            limit_per_query=limit_per_query,
+            max_pages=max_pages,
+            suppress_stale_omnibus=suppress_stale,
         )
-    else:
-        results_view["status"] = "Open / status unknown"
+        try:
+            with st.spinner("Searching SAM.gov with v2 logic..."):
+                results, status = search_sam_v2(
+                    api_key=sam_api_key,
+                    psc_labels=selected_pscs,
+                    notice_labels=selected_notices,
+                    config=cfg,
+                )
+            st.session_state.v2_results = results
+            st.session_state.v2_status = status
+        except Exception as exc:
+            st.error(str(exc))
 
-    if "responseDeadLine" in results_view.columns:
-        missing_deadline = (
-            results_view["responseDeadLine"].isna()
-            | (results_view["responseDeadLine"].astype(str).str.strip() == "")
-        )
-        results_view.loc[missing_deadline, "status"] = "No deadline listed"
+    if st.session_state.v2_status:
+        with st.expander("v2 API request status"):
+            for line in st.session_state.v2_status:
+                st.text(line)
 
-    view_cols = [
-        c for c in [
-            "cosmic_score",
-            "cosmic_priority",
-            "search_score",
-            "status",
-            "title",
-            "postedDate",
-            "responseDeadLine",
-            "naicsCode",
-            "classificationCode",
-            "fullParentPathName",
-            "domain_hits",
-            "isam_hits",
-            "eng_hits",
-            "sam_link",
-        ]
-        if c in results_view.columns
-    ]
+    results = st.session_state.v2_results
+    if results is None or results.empty:
+        st.info("Run the v2 search to see current actionable opportunities.")
+        return
 
-    st.caption(
-        "Ranking uses two layers: **Search Match** measures how strongly the notice "
-        "matches the selected search terms; **COSMIC Score** ranks strategic relevance "
-        "to ISAM capabilities, the space ecosystem, enabling technologies, actionability, "
-        "and potential member value."
-    )
+    st.success(f"{len(results)} actionable opportunities found")
+
+    cols = [c for c in [
+        "cosmic_score", "cosmic_priority", "title", "responseDeadLine", "postedDate",
+        "classificationCode", "naicsCode", "fullParentPathName", "psc_match", "space_sniff",
+        "title_hits", "description_hits", "cosmic_reason", "sam_link"
+    ] if c in results.columns]
 
     st.dataframe(
-        results_view[view_cols],
+        results[cols],
         use_container_width=True,
         hide_index=True,
         column_config={
-            "sam_link": st.column_config.LinkColumn(
-                "SAM.gov",
-                display_text="Open opportunity",
-            ),
-            "cosmic_score": st.column_config.NumberColumn(
-                "COSMIC Score",
-                help="Strategic COSMIC relevance on a 0–100 scale."
-            ),
-            "cosmic_priority": st.column_config.TextColumn("COSMIC Priority"),
-            "search_score": st.column_config.NumberColumn(
-                "Search Match",
-                help="Original keyword/topic match score."
-            ),
-            "status": st.column_config.TextColumn("Status"),
-            "domain_hits": st.column_config.NumberColumn("Topic hits"),
-            "isam_hits": st.column_config.NumberColumn("ISAM hits"),
-            "eng_hits": st.column_config.NumberColumn("Eng hits"),
+            "sam_link": st.column_config.LinkColumn("SAM.gov", display_text="Open opportunity"),
+            "cosmic_score": st.column_config.NumberColumn("COSMIC Score"),
+            "cosmic_priority": st.column_config.TextColumn("Priority"),
+            "psc_match": st.column_config.CheckboxColumn("PSC"),
+            "space_sniff": st.column_config.CheckboxColumn("Space Sniffer"),
         },
     )
 
-    st.divider()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    left, right = st.columns(2)
 
-    export_col, slack_col = st.columns(2)
-
-    with export_col:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        csv_data = results.to_csv(index=False).encode("utf-8")
-
+    with left:
         st.download_button(
-            "Download CSV",
-            data=csv_data,
-            file_name=f"COSMIC_SAM_Opportunities_{timestamp}.csv",
+            "Download v2 CSV",
+            results.to_csv(index=False).encode("utf-8"),
+            file_name=f"COSMIC_SAM_v2_{timestamp}.csv",
             mime="text/csv",
             use_container_width=True,
         )
 
-    with slack_col:
-        if st.button(
-            f"Post Top {min(st.session_state.top_n, len(results))} to Slack",
-            use_container_width=True,
-        ):
-            if not slack_webhook_url:
-                st.error("SLACK_WEBHOOK_URL is not configured in Streamlit Secrets.")
+    with right:
+        if st.button(f"Post Top {min(top_n, len(results))} to Slack", use_container_width=True, key="post_v2"):
+            post_rows_to_slack(results, top_n, "cosmic_score")
 
-            elif not slack_webhook_url.startswith(
-                "https://hooks.slack.com/triggers/"
-            ):
-                st.error("SLACK_WEBHOOK_URL is not a Slack Workflow trigger URL.")
 
-            else:
-                posted = 0
-
-                with st.spinner("Posting to Slack..."):
-                    for _, row in results.head(st.session_state.top_n).iterrows():
-                        payload = {
-                            "title": row.get("title", ""),
-                            "agency": row.get("fullParentPathName", ""),
-                            "deadline": row.get("responseDeadLine", ""),
-                            "score": str(row.get("cosmic_score", row.get("score", ""))),
-                            "link": (row.get("sam_link", "") or "").strip(),
-                        }
-
-                        try:
-                            response = requests.post(
-                                slack_webhook_url,
-                                json=payload,
-                                timeout=30,
-                            )
-
-                            if response.status_code == 200:
-                                posted += 1
-                            else:
-                                st.warning(
-                                    f"Slack returned HTTP {response.status_code}"
-                                )
-
-                        except requests.RequestException as exc:
-                            st.warning(f"Slack post failed: {exc}")
-
-                        time.sleep(1.05)
-
-                st.success(
-                    f"Posted {posted}/"
-                    f"{min(st.session_state.top_n, len(results))} opportunities."
-                )
-
-else:
-    st.info(
-        "Choose at least one Technical Topic or Focus Term, then run a search."
+def render_legacy():
+    st.warning(
+        "Legacy mode is retained for comparison and rollback. "
+        "It uses the original Agency + NAICS retrieval logic."
     )
+
+    default_agencies = [
+        "NASA",
+        "DEPT OF THE AIR FORCE",
+        "SPACE DEVELOPMENT AGENCY",
+        "DARPA",
+    ]
+    default_naics = NAICS_GROUPS["Core COSMIC"].copy()
+
+    if "legacy_results" not in st.session_state:
+        st.session_state.legacy_results = pd.DataFrame()
+    if "legacy_status" not in st.session_state:
+        st.session_state.legacy_status = []
+    if "legacy_agencies" not in st.session_state:
+        st.session_state.legacy_agencies = default_agencies.copy()
+    if "legacy_naics" not in st.session_state:
+        st.session_state.legacy_naics = default_naics.copy()
+    if "legacy_bundles" not in st.session_state:
+        st.session_state.legacy_bundles = []
+    if "legacy_focus" not in st.session_state:
+        st.session_state.legacy_focus = []
+
+    with st.sidebar:
+        st.header("Legacy v1 Controls")
+        days_back = st.slider("Days back", 7, 365, 60, 7, key="legacy_days")
+        limit_per_query = st.slider("Limit per query", 10, 200, 100, 10, key="legacy_limit")
+        only_open = st.checkbox("Only likely-open", True, key="legacy_open")
+        strict_eng = st.checkbox("Require engineering term in title", False, key="legacy_strict")
+        domain_weight = st.slider("Topic weight", 0, 5, 2, key="legacy_domain")
+        eng_weight = st.slider("Engineering weight", 0, 5, 1, key="legacy_eng")
+        isam_boost = st.slider("ISAM boost", 0, 10, 5, key="legacy_isam")
+        top_n = st.slider("Top N to post to Slack", 1, 10, 3, key="legacy_topn")
+
+    st.subheader("1. Agencies")
+    st.multiselect("Select agencies", AGENCY_CHOICES, key="legacy_agencies")
+
+    st.subheader("2. NAICS Industries")
+    st.multiselect("Select NAICS categories", list(NAICS_CHOICES.keys()), key="legacy_naics")
+
+    st.subheader("3. Technical Topics")
+    st.multiselect("Select technical topics", list(KEYWORD_BUNDLES.keys()), key="legacy_bundles")
+
+    st.subheader("4. Focus Terms")
+    st.multiselect("Select focus terms", list(KEYWORD_LIBRARY.keys()), key="legacy_focus")
+
+    if st.button("Run Legacy Search", type="primary", use_container_width=True, key="run_legacy"):
+        cfg = LegacySearchConfig(
+            days_back=days_back,
+            limit_per_query=limit_per_query,
+            only_open=only_open,
+            strict_eng=strict_eng,
+            domain_weight=domain_weight,
+            eng_weight=eng_weight,
+            isam_boost=isam_boost,
+        )
+        try:
+            with st.spinner("Searching SAM.gov with legacy logic..."):
+                results, status = search_sam_legacy(
+                    api_key=sam_api_key,
+                    agencies=st.session_state.legacy_agencies,
+                    naics_labels=st.session_state.legacy_naics,
+                    selected_bundles=st.session_state.legacy_bundles,
+                    selected_keywords=st.session_state.legacy_focus,
+                    config=cfg,
+                )
+            st.session_state.legacy_results = results
+            st.session_state.legacy_status = status
+        except Exception as exc:
+            st.error(str(exc))
+
+    if st.session_state.legacy_status:
+        with st.expander("Legacy API request status"):
+            for line in st.session_state.legacy_status:
+                st.text(line)
+
+    results = st.session_state.legacy_results
+    if results is None or results.empty:
+        st.info("Run the legacy search to see results.")
+        return
+
+    st.success(f"{len(results)} legacy opportunities found")
+
+    cols = [c for c in [
+        "cosmic_score", "cosmic_priority", "search_score", "title", "postedDate",
+        "responseDeadLine", "naicsCode", "classificationCode", "fullParentPathName",
+        "domain_hits", "isam_hits", "eng_hits", "sam_link"
+    ] if c in results.columns]
+
+    st.dataframe(
+        results[cols],
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "sam_link": st.column_config.LinkColumn("SAM.gov", display_text="Open opportunity"),
+            "cosmic_score": st.column_config.NumberColumn("COSMIC Score"),
+            "search_score": st.column_config.NumberColumn("Search Match"),
+        },
+    )
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    left, right = st.columns(2)
+
+    with left:
+        st.download_button(
+            "Download legacy CSV",
+            results.to_csv(index=False).encode("utf-8"),
+            file_name=f"COSMIC_SAM_legacy_{timestamp}.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+
+    with right:
+        if st.button(f"Post Top {min(top_n, len(results))} to Slack", use_container_width=True, key="post_legacy"):
+            post_rows_to_slack(results, top_n, "cosmic_score")
+
+
+if search_mode == "PSC + Deadline Search v2":
+    render_v2()
+else:
+    render_legacy()
