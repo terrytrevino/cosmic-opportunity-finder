@@ -63,12 +63,15 @@ st.markdown(
     f"""
     <style>
 
-    /* Main background image */
+    /* ======================================================
+       COSMIC BACKGROUND
+       ====================================================== */
+
     .stApp {{
         background:
             linear-gradient(
-                rgba(3, 12, 26, 0.76),
-                rgba(3, 12, 26, 0.90)
+                rgba(2, 10, 24, 0.48),
+                rgba(2, 10, 24, 0.68)
             ),
             url("data:image/png;base64,{background_b64}");
 
@@ -77,53 +80,148 @@ st.markdown(
         background-attachment: fixed;
     }}
 
-    /* Main page width */
     .block-container {{
         max-width: 1500px;
         padding-top: 2rem;
         padding-bottom: 4rem;
     }}
 
-    /* Sidebar */
+
+    /* ======================================================
+       SIDEBAR
+       ====================================================== */
+
     section[data-testid="stSidebar"] {{
-        background-color: rgba(7, 20, 38, 0.92);
-        border-right: 1px solid rgba(90, 160, 255, 0.25);
+        background: rgba(5, 18, 38, 0.90);
+        border-right: 1px solid #4da3ff;
     }}
 
-    /* Main text */
+
+    /* ======================================================
+       GENERAL TEXT
+       ====================================================== */
+
     h1, h2, h3, p, label {{
-        color: #f4f7fb;
+        color: #ffffff;
     }}
 
-    /* Input fields */
-    div[data-baseweb="select"] > div,
+
+    /* ======================================================
+       INPUT / SELECT BOXES
+       ====================================================== */
+
+    div[data-baseweb="select"] > div {{
+        background-color: rgba(7, 24, 48, 0.94);
+        border: 1px solid #4da3ff;
+        color: white;
+    }}
+
     div[data-baseweb="input"] > div {{
-        background-color: rgba(12, 29, 50, 0.88);
+        background-color: rgba(7, 24, 48, 0.94);
+        border: 1px solid #4da3ff;
+        color: white;
     }}
 
-    /* Data table */
-    div[data-testid="stDataFrame"] {{
-        background: rgba(7, 20, 38, 0.88);
-        border-radius: 12px;
+
+    /* ======================================================
+       MULTISELECT TAGS / SELECTED OPTIONS
+       Bright COSMIC blue for strong visual distinction
+       ====================================================== */
+
+    span[data-baseweb="tag"] {{
+        background-color: #147df5 !important;
+        color: #ffffff !important;
+        border: 1px solid #8bc4ff !important;
+        font-weight: 600 !important;
     }}
 
-    /* Info / warning / success boxes */
-    div[data-testid="stAlert"] {{
-        background-color: rgba(10, 28, 49, 0.88);
-        border-radius: 12px;
+
+    /* ======================================================
+       RADIO BUTTON LABELS
+       ====================================================== */
+
+    div[data-testid="stRadio"] label {{
+        background: rgba(7, 25, 50, 0.90);
+        border: 1px solid #4da3ff;
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-right: 8px;
     }}
 
-    /* Primary buttons */
-    div.stButton > button[kind="primary"] {{
+
+    /* ======================================================
+       BUTTONS
+       ====================================================== */
+
+    div.stButton > button {{
+        background: #126fe5;
+        color: #ffffff;
+        border: 1px solid #79baff;
         border-radius: 8px;
         font-weight: 700;
+    }}
+
+    div.stButton > button:hover {{
+        background: #258cff;
+        color: #ffffff;
+        border: 1px solid #ffffff;
+    }}
+
+    div.stButton > button[kind="primary"] {{
+        background: #147df5;
+        color: #ffffff;
+        border: 2px solid #a9d5ff;
+        font-weight: 800;
+    }}
+
+
+    /* ======================================================
+       LINK BUTTONS
+       ====================================================== */
+
+    div[data-testid="stLinkButton"] a {{
+        background: #126fe5 !important;
+        color: #ffffff !important;
+        border: 1px solid #79baff !important;
+        border-radius: 8px !important;
+        font-weight: 700 !important;
+    }}
+
+
+    /* ======================================================
+       ALERT / INFORMATION PANELS
+       ====================================================== */
+
+    div[data-testid="stAlert"] {{
+        background: rgba(6, 23, 46, 0.90);
+        border: 1px solid rgba(77, 163, 255, 0.65);
+        border-radius: 12px;
+    }}
+
+
+    /* ======================================================
+       DATA TABLE
+       ====================================================== */
+
+    div[data-testid="stDataFrame"] {{
+        background: rgba(5, 18, 38, 0.92);
+        border: 1px solid rgba(77, 163, 255, 0.55);
+        border-radius: 12px;
+    }}
+
+
+    /* ======================================================
+       SLIDERS
+       ====================================================== */
+
+    div[data-testid="stSlider"] {{
+        color: #ffffff;
     }}
 
     </style>
     """,
     unsafe_allow_html=True,
 )
-
 
 # ============================================================
 # COSMIC HERO / TITLE
