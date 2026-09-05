@@ -2,13 +2,46 @@ from __future__ import annotations
 
 from datetime import datetime
 import time
+import base64
+from pathlib import Path
+
 import pandas as pd
 import requests
 import streamlit as st
 
-import base64
-from pathlib import Path
+from cosmic_search import (
+    AGENCY_CHOICES,
+    KEYWORD_BUNDLES,
+    KEYWORD_LIBRARY,
+    NAICS_CHOICES,
+    NAICS_GROUPS,
+    SearchConfig as LegacySearchConfig,
+    search_sam as search_sam_legacy,
+)
 
+from cosmic_search_v2 import (
+    DEFAULT_PSC_LABELS,
+    NOTICE_TYPES,
+    PSC_CHOICES,
+    SearchConfig as V2SearchConfig,
+    search_sam as search_sam_v2,
+)
+
+
+# ============================================================
+# STREAMLIT PAGE SETTINGS
+# ============================================================
+
+st.set_page_config(
+    page_title="COSMIC Opportunity Finder",
+    page_icon="🛰️",
+    layout="wide",
+)
+
+
+# ============================================================
+# COSMIC BACKGROUND
+# ============================================================
 
 def get_base64_image(path):
     image_path = Path(path)
@@ -30,11 +63,11 @@ st.markdown(
     f"""
     <style>
 
-    /* Main app background */
+    /* Main background image */
     .stApp {{
         background:
             linear-gradient(
-                rgba(3, 12, 26, 0.78),
+                rgba(3, 12, 26, 0.76),
                 rgba(3, 12, 26, 0.90)
             ),
             url("data:image/png;base64,{background_b64}");
@@ -44,7 +77,7 @@ st.markdown(
         background-attachment: fixed;
     }}
 
-    /* Main content width */
+    /* Main page width */
     .block-container {{
         max-width: 1500px;
         padding-top: 2rem;
@@ -57,24 +90,24 @@ st.markdown(
         border-right: 1px solid rgba(90, 160, 255, 0.25);
     }}
 
-    /* Text */
+    /* Main text */
     h1, h2, h3, p, label {{
         color: #f4f7fb;
     }}
 
-    /* Inputs */
+    /* Input fields */
     div[data-baseweb="select"] > div,
     div[data-baseweb="input"] > div {{
         background-color: rgba(12, 29, 50, 0.88);
     }}
 
-    /* Dataframe area */
+    /* Data table */
     div[data-testid="stDataFrame"] {{
         background: rgba(7, 20, 38, 0.88);
         border-radius: 12px;
     }}
 
-    /* Info / success / warning boxes */
+    /* Info / warning / success boxes */
     div[data-testid="stAlert"] {{
         background-color: rgba(10, 28, 49, 0.88);
         border-radius: 12px;
@@ -91,29 +124,10 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-from cosmic_search import (
-    AGENCY_CHOICES,
-    KEYWORD_BUNDLES,
-    KEYWORD_LIBRARY,
-    NAICS_CHOICES,
-    NAICS_GROUPS,
-    SearchConfig as LegacySearchConfig,
-    search_sam as search_sam_legacy,
-)
 
-from cosmic_search_v2 import (
-    DEFAULT_PSC_LABELS,
-    NOTICE_TYPES,
-    PSC_CHOICES,
-    SearchConfig as V2SearchConfig,
-    search_sam as search_sam_v2,
-)
-
-st.set_page_config(
-    page_title="COSMIC Opportunity Finder",
-    page_icon="🛰️",
-    layout="wide",
-)
+# ============================================================
+# COSMIC HERO / TITLE
+# ============================================================
 
 st.markdown(
     """
@@ -121,10 +135,11 @@ st.markdown(
         padding: 28px 32px;
         margin-bottom: 18px;
         border-radius: 18px;
-        background: rgba(6, 20, 38, 0.78);
+        background: rgba(6, 20, 38, 0.76);
         border: 1px solid rgba(93, 161, 255, 0.28);
         backdrop-filter: blur(8px);
     ">
+
         <div style="
             font-size: 48px;
             font-weight: 800;
@@ -151,10 +166,16 @@ st.markdown(
         ">
             SPACE • ISAM • INNOVATION • IMPACT
         </div>
+
     </div>
     """,
     unsafe_allow_html=True,
 )
+
+
+# ============================================================
+# COSMIC LINKS
+# ============================================================
 
 link_col1, link_col2, _ = st.columns(
     [1, 1, 3]
