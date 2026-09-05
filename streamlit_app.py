@@ -319,8 +319,10 @@ st.markdown(
     unsafe_allow_html=True,
 )
 # ============================================================
-# COSMIC OFFICIAL HEADER
+# COSMIC HEADER
 # ============================================================
+
+logo_path = Path("cosmic_logo.png")
 
 header_left, header_right = st.columns(
     [1.1, 2.2],
@@ -328,29 +330,60 @@ header_left, header_right = st.columns(
 )
 
 with header_left:
-    st.markdown(
-        """
-        <div style="
-            font-size: 44px;
-            font-weight: 800;
-            letter-spacing: 4px;
-            color: #F7FAFF;
-        ">
-            COSMIC
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    if logo_path.exists():
+        st.image(
+            str(logo_path),
+            width=300,
+        )
+    else:
+        st.markdown(
+            """
+            <div style="
+                font-size: 44px;
+                font-weight: 800;
+                letter-spacing: 4px;
+                color: #F7FAFF;
+            ">
+                COSMIC
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 with header_right:
     st.markdown(
         """
-### O P P O R T U N I T Y   F I N D E R
+        <div style="
+            font-size: 24px;
+            font-weight: 500;
+            letter-spacing: 5px;
+            color: #F7FAFF;
+            margin-bottom: 8px;
+        ">
+            OPPORTUNITY FINDER
+        </div>
 
-**SPACE • ISAM • INNOVATION • IMPACT**
+        <div style="
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            color: #8CC7FF;
+            margin-bottom: 10px;
+        ">
+            SPACE • ISAM • INNOVATION • IMPACT
+        </div>
 
-Discovering actionable federal opportunities across the in-space servicing, assembly, manufacturing, and broader space ecosystem.
-        """
+        <div style="
+            font-size: 14px;
+            color: #C9D8EE;
+            line-height: 1.5;
+        ">
+            Discovering actionable federal opportunities across
+            the in-space servicing, assembly, manufacturing,
+            and broader space ecosystem.
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
 # ============================================================
