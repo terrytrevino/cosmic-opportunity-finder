@@ -322,70 +322,58 @@ st.markdown(
 # COSMIC HEADER
 # ============================================================
 
-logo_path = Path("cosmic_logo.png")
+st.markdown(
+"""<div style="
+padding: 24px 30px 22px 30px;
+margin-bottom: 16px;
+border-radius: 18px;
+background: rgba(5, 18, 38, 0.78);
+border: 1px solid rgba(94, 162, 255, 0.45);
+">
 
-header_left, header_right = st.columns(
-    [1.1, 2.2],
-    vertical_alignment="center",
+<div style="
+font-size: 42px;
+font-weight: 800;
+letter-spacing: 6px;
+color: #F7FAFF;
+line-height: 1.05;
+">
+COSMIC
+</div>
+
+<div style="
+font-size: 21px;
+font-weight: 500;
+letter-spacing: 6px;
+color: #DCEAFF;
+margin-top: 10px;
+">
+OPPORTUNITY FINDER
+</div>
+
+<div style="
+font-size: 12px;
+font-weight: 600;
+letter-spacing: 3px;
+color: #8CC7FF;
+margin-top: 13px;
+">
+SPACE • ISAM • INNOVATION • IMPACT
+</div>
+
+<div style="
+font-size: 14px;
+color: #C9D8EE;
+margin-top: 11px;
+line-height: 1.5;
+">
+Discovering actionable federal opportunities across the
+in-space servicing, assembly, manufacturing, and broader space ecosystem.
+</div>
+
+</div>""",
+unsafe_allow_html=True,
 )
-
-with header_left:
-    if logo_path.exists():
-        st.image(
-            str(logo_path),
-            width=300,
-        )
-    else:
-        st.markdown(
-            """
-            <div style="
-                font-size: 44px;
-                font-weight: 800;
-                letter-spacing: 4px;
-                color: #F7FAFF;
-            ">
-                COSMIC
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-with header_right:
-    st.markdown(
-        """
-        <div style="
-            font-size: 24px;
-            font-weight: 500;
-            letter-spacing: 5px;
-            color: #F7FAFF;
-            margin-bottom: 8px;
-        ">
-            OPPORTUNITY FINDER
-        </div>
-
-        <div style="
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 3px;
-            color: #8CC7FF;
-            margin-bottom: 10px;
-        ">
-            SPACE • ISAM • INNOVATION • IMPACT
-        </div>
-
-        <div style="
-            font-size: 14px;
-            color: #C9D8EE;
-            line-height: 1.5;
-        ">
-            Discovering actionable federal opportunities across
-            the in-space servicing, assembly, manufacturing,
-            and broader space ecosystem.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
 # ============================================================
 # COSMIC LINKS
 # ============================================================
