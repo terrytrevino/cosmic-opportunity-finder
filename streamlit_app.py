@@ -6,6 +6,91 @@ import pandas as pd
 import requests
 import streamlit as st
 
+import base64
+from pathlib import Path
+
+
+def get_base64_image(path):
+    image_path = Path(path)
+
+    if not image_path.exists():
+        return ""
+
+    return base64.b64encode(
+        image_path.read_bytes()
+    ).decode()
+
+
+background_b64 = get_base64_image(
+    "assets/cosmic_background.png"
+)
+
+
+st.markdown(
+    f"""
+    <style>
+
+    /* Main app background */
+    .stApp {{
+        background:
+            linear-gradient(
+                rgba(3, 12, 26, 0.78),
+                rgba(3, 12, 26, 0.90)
+            ),
+            url("data:image/png;base64,{background_b64}");
+
+        background-size: cover;
+        background-position: center top;
+        background-attachment: fixed;
+    }}
+
+    /* Main content width */
+    .block-container {{
+        max-width: 1500px;
+        padding-top: 2rem;
+        padding-bottom: 4rem;
+    }}
+
+    /* Sidebar */
+    section[data-testid="stSidebar"] {{
+        background-color: rgba(7, 20, 38, 0.92);
+        border-right: 1px solid rgba(90, 160, 255, 0.25);
+    }}
+
+    /* Text */
+    h1, h2, h3, p, label {{
+        color: #f4f7fb;
+    }}
+
+    /* Inputs */
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="input"] > div {{
+        background-color: rgba(12, 29, 50, 0.88);
+    }}
+
+    /* Dataframe area */
+    div[data-testid="stDataFrame"] {{
+        background: rgba(7, 20, 38, 0.88);
+        border-radius: 12px;
+    }}
+
+    /* Info / success / warning boxes */
+    div[data-testid="stAlert"] {{
+        background-color: rgba(10, 28, 49, 0.88);
+        border-radius: 12px;
+    }}
+
+    /* Primary buttons */
+    div.stButton > button[kind="primary"] {{
+        border-radius: 8px;
+        font-weight: 700;
+    }}
+
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 from cosmic_search import (
     AGENCY_CHOICES,
     KEYWORD_BUNDLES,
@@ -30,8 +115,64 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("COSMIC Opportunity Finder")
-st.caption("SAM.gov Space + ISAM Opportunity Search")
+st.markdown(
+    """
+    <div style="
+        padding: 28px 32px;
+        margin-bottom: 18px;
+        border-radius: 18px;
+        background: rgba(6, 20, 38, 0.78);
+        border: 1px solid rgba(93, 161, 255, 0.28);
+        backdrop-filter: blur(8px);
+    ">
+        <div style="
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            color: white;
+        ">
+            COSMIC
+        </div>
+
+        <div style="
+            font-size: 23px;
+            letter-spacing: 5px;
+            color: #dceaff;
+            margin-top: -4px;
+        ">
+            OPPORTUNITY FINDER
+        </div>
+
+        <div style="
+            font-size: 14px;
+            letter-spacing: 3px;
+            color: #8fc7ff;
+            margin-top: 12px;
+        ">
+            SPACE • ISAM • INNOVATION • IMPACT
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+link_col1, link_col2, _ = st.columns(
+    [1, 1, 3]
+)
+
+with link_col1:
+    st.link_button(
+        "Join COSMIC",
+        "https://cosmicspace.org/membership/",
+        use_container_width=True,
+    )
+
+with link_col2:
+    st.link_button(
+        "COSMIC Website",
+        "https://cosmicspace.org/",
+        use_container_width=True,
+    )
 
 search_mode = st.radio(
     "Search mode",
