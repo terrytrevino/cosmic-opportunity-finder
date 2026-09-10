@@ -2,6 +2,15 @@
 
 A Streamlit front end for searching SAM.gov space, ISAM, and engineering contract opportunities.
 
+## Current v2 search
+
+- Uses the selected Product and Service Codes and active response deadlines as hard search boundaries.
+- Defaults to the baseline keywords `space` and `orbit`.
+- Supports either strict keyword filtering or keyword-weighted ranking.
+- Removes unselected PSC families and suppresses off-domain maritime results without a clear space signal.
+- Provides a five-column Opportunity Marketplace CSV and a full diagnostic CSV.
+- Keeps the legacy agency-and-NAICS search available for comparison.
+
 ## Local run
 
 1. Install Python 3.11+.

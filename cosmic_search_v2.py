@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from html import unescape
+import re
 
 import pandas as pd
 import requests
@@ -60,6 +62,16 @@ NON_ACTIONABLE_TERMS = [
     "cancelled", "contract extension",
 ]
 
+CORE_SPACE_TERMS = [
+    "space", "orbit", "orbital", "spacecraft", "satellite", "lunar",
+    "isam", "microgravity", "cubesat", "deorbit", "on-orbit", "in-space",
+]
+
+OFF_DOMAIN_MARITIME_TERMS = [
+    "maritime", "shipbuilding", "shipyard", "naval manufacturing",
+    "surface vessel", "submarine", "industrial base capability",
+]
+
 
 @dataclass
 class SearchConfig:
@@ -75,6 +87,56 @@ class SearchConfig:
 def _hits(text, terms):
     text = str(text or "").lower()
     return sum(1 for term in terms if term.lower() in text)
+
+
+def _contains_any_phrase(text, terms):
+    text = str(text or "").lower()
+    return any(
+        re.search(rf"(?<!\w){re.escape(term.lower())}(?!\w)", text)
+        for term in terms
+    )
+
+
+def _phrase_hits(text, terms):
+    text = str(text or "").lower()
+    return sum(
+        1
+        for term in terms
+        if re.search(rf"(?<!\w){re.escape(term.lower())}(?!\w)", text)
+    )
+
+
+def _clean_text(value):
+    text = unescape(str(value or ""))
+    text = re.sub(r"<[^>]+>", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _format_contacts(value):
+    if not value:
+        return ""
+    contacts = value if isinstance(value, list) else [value]
+    rendered = []
+    for contact in contacts:
+        if not isinstance(contact, dict):
+            rendered.append(_clean_text(contact))
+            continue
+        parts = []
+        for key in ("type", "fullName", "title", "email", "phone", "fax"):
+            item = _clean_text(contact.get(key, ""))
+            if item and item not in parts:
+                parts.append(item)
+        if parts:
+            rendered.append(" | ".join(parts))
+    return "; ".join(rendered)
+
+
+def _normalize_keywords(keywords):
+    if not keywords:
+        return []
+    if isinstance(keywords, str):
+        keywords = re.split(r"[,;\n]+", keywords)
+    return [str(term).strip().lower() for term in keywords if str(term).strip()]
 
 
 def _row_text(row):
@@ -173,7 +235,7 @@ def _collect(
     return records, status_lines
 
 
-def _score(row):
+def _score(row, custom_keywords=None):
     text = _row_text(row)
     title = str(row.get("title", "") or "").lower()
     desc = str(row.get("description_text", "") or "").lower()
@@ -183,6 +245,7 @@ def _score(row):
     enablers = _hits(text, ENABLER_TERMS)
     title_hits = _hits(title, SEARCH_TERMS)
     description_hits = _hits(desc, SEARCH_TERMS)
+    custom_keyword_hits = _phrase_hits(text, _normalize_keywords(custom_keywords))
 
     psc_match = bool(row.get("psc_match", False))
     space_sniff = bool(row.get("space_sniff", False))
@@ -195,6 +258,7 @@ def _score(row):
         + min(10, enablers * 2)
         + min(10, title_hits * 3)
         + min(5, description_hits)
+        + min(24, custom_keyword_hits * 8)
         + (2 if space_sniff else 0)
         + (0 if _hits(text, NON_ACTIONABLE_TERMS) else 3),
     )
@@ -221,6 +285,8 @@ def _score(row):
         reasons.append(f"Description ({description_hits})")
     if space_sniff:
         reasons.append("Space title sniffer")
+    if custom_keyword_hits:
+        reasons.append(f"User keywords ({custom_keyword_hits})")
 
     return pd.Series(
         {
@@ -228,12 +294,20 @@ def _score(row):
             "cosmic_priority": priority,
             "title_hits": title_hits,
             "description_hits": description_hits,
+            "custom_keyword_hits": custom_keyword_hits,
             "cosmic_reason": "; ".join(reasons) or "Weak signal",
         }
     )
 
 
-def search_sam(api_key, psc_labels, notice_labels, config):
+def search_sam(
+    api_key,
+    psc_labels,
+    notice_labels,
+    config,
+    custom_keywords=None,
+    keyword_mode="rank",
+):
     if not api_key or not api_key.startswith("SAM-"):
         raise ValueError("Missing or invalid SAM_API_KEY.")
     if not psc_labels:
@@ -243,6 +317,9 @@ def search_sam(api_key, psc_labels, notice_labels, config):
 
     psc_codes = [PSC_CHOICES[label] for label in psc_labels]
     notice_codes = [NOTICE_TYPES[label] for label in notice_labels]
+    custom_keywords = _normalize_keywords(custom_keywords)
+    if keyword_mode not in {"rank", "strict"}:
+        raise ValueError("keyword_mode must be 'rank' or 'strict'.")
 
     now = datetime.now(timezone.utc)
 
@@ -327,6 +404,20 @@ def search_sam(api_key, psc_labels, notice_labels, config):
         df["psc_match"] = ids.isin(psc_ids)
         df["space_sniff"] = ids.isin(sniff_ids)
 
+        if "classificationCode" not in df.columns:
+            status_lines.append("SAM response did not include classificationCode.")
+            return pd.DataFrame(), status_lines
+        normalized_psc = (
+            df["classificationCode"].fillna("").astype(str).str.upper().str.strip().str[:4]
+        )
+        selected_psc_mask = normalized_psc.isin(set(psc_codes))
+        removed_psc = int((~selected_psc_mask).sum())
+        if removed_psc:
+            status_lines.append(
+                f"Removed {removed_psc} records outside the selected PSC set."
+            )
+        df = df[selected_psc_mask].copy()
+
         df["responseDeadLine_dt"] = _response_deadline_series(df)
 
         now_ts = pd.Timestamp.now(tz="UTC")
@@ -376,6 +467,13 @@ def search_sam(api_key, psc_labels, notice_labels, config):
                     session, api_key, df.at[idx, "description"]
                 )
 
+        df["description_text"] = df["description_text"].map(_clean_text)
+        df["contact_info"] = (
+            df["pointOfContact"].map(_format_contacts)
+            if "pointOfContact" in df.columns
+            else ""
+        )
+
         if "title" not in df.columns:
             df["title"] = ""
 
@@ -390,12 +488,46 @@ def search_sam(api_key, psc_labels, notice_labels, config):
             | (df["local_keyword_hits"] > 0)
         ].copy()
 
-        scores = df.apply(_score, axis=1)
+        if not df.empty:
+            row_text = df.apply(_row_text, axis=1)
+            off_domain = row_text.map(
+                lambda text: _contains_any_phrase(text, OFF_DOMAIN_MARITIME_TERMS)
+            )
+            space_domain = row_text.map(
+                lambda text: _contains_any_phrase(text, CORE_SPACE_TERMS)
+            )
+            removed_maritime = int((off_domain & ~space_domain).sum())
+            if removed_maritime:
+                status_lines.append(
+                    f"Removed {removed_maritime} off-domain maritime records."
+                )
+            df = df[~(off_domain & ~space_domain)].copy()
+
+        if custom_keywords:
+            keyword_hits = df.apply(
+                lambda row: _phrase_hits(_row_text(row), custom_keywords), axis=1
+            )
+            if keyword_mode == "strict":
+                before = len(df)
+                df = df[keyword_hits > 0].copy()
+                status_lines.append(
+                    f"Strict keyword filter retained {len(df)}/{before} records."
+                )
+
+        if df.empty:
+            return df, status_lines
+
+        scores = df.apply(lambda row: _score(row, custom_keywords), axis=1)
         df = pd.concat([df, scores], axis=1)
 
         df["sam_link"] = df["noticeId"].apply(
             lambda x: f"https://sam.gov/opp/{x}/view"
         )
+
+        df["opportunity_title"] = df["title"]
+        df["opportunity_description"] = df["description_text"]
+        df["opportunity_link"] = df["sam_link"]
+        df["due_date"] = df.get("responseDeadLine", "")
 
         return df.sort_values(
             ["cosmic_score", "responseDeadLine_dt"],

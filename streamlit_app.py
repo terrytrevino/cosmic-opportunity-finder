@@ -374,28 +374,6 @@ in-space servicing, assembly, manufacturing, and broader space ecosystem.
 </div>""",
 unsafe_allow_html=True,
 )
-# ============================================================
-# COSMIC LINKS
-# ============================================================
-
-link_col1, link_col2, _ = st.columns(
-    [1, 1, 3]
-)
-
-with link_col1:
-    st.link_button(
-        "Join COSMIC",
-        "https://cosmicspace.org/membership/",
-        use_container_width=True,
-    )
-
-with link_col2:
-    st.link_button(
-        "COSMIC Website",
-        "https://cosmicspace.org/",
-        use_container_width=True,
-    )
-
 search_mode = st.radio(
     "Search mode",
     ["PSC + Deadline Search v2", "Legacy Agency + NAICS Search v1"],
@@ -427,6 +405,8 @@ def post_rows_to_slack(results: pd.DataFrame, top_n: int, score_col: str):
                 "deadline": row.get("responseDeadLine", ""),
                 "score": str(row.get(score_col, row.get("score", ""))),
                 "link": str(row.get("sam_link", "") or "").strip(),
+                "description": str(row.get("description_text", "") or "").strip(),
+                "contact_info": str(row.get("contact_info", "") or "").strip(),
             }
             try:
                 r = requests.post(slack_webhook_url, json=payload, timeout=30)
@@ -439,6 +419,19 @@ def post_rows_to_slack(results: pd.DataFrame, top_n: int, score_col: str):
             time.sleep(1.05)
 
     st.success(f"Posted {posted}/{min(top_n, len(results))} opportunities.")
+
+
+def build_marketplace_export(results: pd.DataFrame) -> pd.DataFrame:
+    """Return Andrew Brewer's five requested Marketplace fields."""
+    return pd.DataFrame(
+        {
+            "Opportunity Title": results.get("title", ""),
+            "Description": results.get("description_text", ""),
+            "Link": results.get("sam_link", ""),
+            "Contact Info": results.get("contact_info", ""),
+            "Due Date": results.get("responseDeadLine", ""),
+        }
+    )
 
 
 def render_v2():
@@ -478,7 +471,27 @@ def render_v2():
         key="v2_notices",
     )
 
-    st.subheader("3. Retrieval Logic")
+    st.subheader("3. Keyword or Phrase Refinement")
+    keyword_text = st.text_area(
+        "Enter optional keywords or phrases",
+        value="space, orbit",
+        placeholder="Examples: space refueling, robotic servicing, lunar logistics",
+        help="Separate multiple entries with commas, semicolons, or new lines.",
+        key="v2_keyword_text",
+    )
+    keyword_choice = st.radio(
+        "Keyword behavior",
+        ["Refine ranking", "Strict filter"],
+        index=1,
+        horizontal=True,
+        key="v2_keyword_mode",
+        help=(
+            "Refine ranking keeps valid PSC results and boosts matches. "
+            "Strict filter shows only records matching at least one entered term."
+        ),
+    )
+
+    st.subheader("4. Retrieval Logic")
     st.write(
         "**Primary:** PSC codes. **Secondary:** `space` keyword sniffer. "
         "Results are deduplicated by Notice ID, filtered by response date, "
@@ -500,6 +513,8 @@ def render_v2():
                     psc_labels=selected_pscs,
                     notice_labels=selected_notices,
                     config=cfg,
+                    custom_keywords=keyword_text,
+                    keyword_mode="strict" if keyword_choice == "Strict filter" else "rank",
                 )
             st.session_state.v2_results = results
             st.session_state.v2_status = status
@@ -521,7 +536,8 @@ def render_v2():
     cols = [c for c in [
         "cosmic_score", "cosmic_priority", "title", "responseDeadLine", "postedDate",
         "classificationCode", "naicsCode", "fullParentPathName", "psc_match", "space_sniff",
-        "title_hits", "description_hits", "cosmic_reason", "sam_link"
+        "title_hits", "description_hits", "custom_keyword_hits", "contact_info",
+        "cosmic_reason", "sam_link"
     ] if c in results.columns]
 
     st.dataframe(
@@ -538,11 +554,21 @@ def render_v2():
     )
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    left, right = st.columns(2)
+    marketplace_export = build_marketplace_export(results)
+    left, middle, right = st.columns(3)
 
     with left:
         st.download_button(
-            "Download v2 CSV",
+            "Download Marketplace CSV",
+            marketplace_export.to_csv(index=False).encode("utf-8"),
+            file_name=f"COSMIC_Marketplace_{timestamp}.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+
+    with middle:
+        st.download_button(
+            "Download Full v2 CSV",
             results.to_csv(index=False).encode("utf-8"),
             file_name=f"COSMIC_SAM_v2_{timestamp}.csv",
             mime="text/csv",
@@ -679,3 +705,19 @@ if search_mode == "PSC + Deadline Search v2":
     render_v2()
 else:
     render_legacy()
+
+st.divider()
+st.caption("COSMIC resources")
+cosmic_site_col, join_cosmic_col = st.columns(2)
+with cosmic_site_col:
+    st.link_button(
+        "COSMIC Website",
+        "https://cosmicspace.org/",
+        use_container_width=True,
+    )
+with join_cosmic_col:
+    st.link_button(
+        "Join COSMIC",
+        "https://cosmicspace.org/membership/",
+        use_container_width=True,
+    )
