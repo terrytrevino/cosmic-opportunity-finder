@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-import importlib
 import time
 import base64
 from pathlib import Path
@@ -9,7 +8,6 @@ from pathlib import Path
 import pandas as pd
 import requests
 import streamlit as st
-import cosmic_search_v2 as cosmic_search_v2_module
 
 from cosmic_search import (
     AGENCY_CHOICES,
@@ -21,15 +19,13 @@ from cosmic_search import (
     search_sam as search_sam_legacy,
 )
 
-# Streamlit can rerun this page while retaining imported modules in memory.
-# Reload the v2 engine so the page and its search function always use the
-# same deployed version after an update.
-cosmic_search_v2_module = importlib.reload(cosmic_search_v2_module)
-DEFAULT_PSC_LABELS = cosmic_search_v2_module.DEFAULT_PSC_LABELS
-NOTICE_TYPES = cosmic_search_v2_module.NOTICE_TYPES
-PSC_CHOICES = cosmic_search_v2_module.PSC_CHOICES
-V2SearchConfig = cosmic_search_v2_module.SearchConfig
-search_sam_v2 = cosmic_search_v2_module.search_sam
+from cosmic_search_v3 import (
+    DEFAULT_PSC_LABELS,
+    NOTICE_TYPES,
+    PSC_CHOICES,
+    SearchConfig as V2SearchConfig,
+    search_sam as search_sam_v2,
+)
 
 
 # ============================================================
