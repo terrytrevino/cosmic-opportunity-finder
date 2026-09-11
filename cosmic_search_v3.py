@@ -58,11 +58,6 @@ ENABLER_TERMS = [
     "simulation", "modeling", "interface", "standard",
 ]
 
-NON_ACTIONABLE_TERMS = [
-    "award notice", "justification", "sole source", "cancellation",
-    "cancelled", "contract extension",
-]
-
 OFF_DOMAIN_TERMS = [
     "hotel", "conference center", "conference space", "lodging", "ballroom",
     "banquet", "meeting room", "event venue", "resort", "catering",
@@ -247,10 +242,23 @@ def _score(row, custom_keywords):
         else "Low"
     )
 
-    domain_valid = psc_match or core > 0 or direct > 0
+    substantive_evidence = bool(
+        direct > 0
+        or core > 0
+        or title_core > 0
+        or description_core > 0
+        or custom_hits > 0
+    )
+    domain_valid = bool(psc_match or substantive_evidence)
+
     reasons = []
-    if psc_match:
-        reasons.append("PSC match")
+    if psc_match and substantive_evidence:
+        reasons.append("PSC + substantive space/ISAM evidence")
+    elif psc_match:
+        reasons.append("PSC-only structural match")
+    elif substantive_evidence:
+        reasons.append("Substantive space/ISAM evidence")
+
     if direct:
         reasons.append(f"Direct/ISAM ({direct})")
     if core:
@@ -259,6 +267,8 @@ def _score(row, custom_keywords):
         reasons.append(f"Enablers ({enablers})")
     if custom_hits:
         reasons.append(f"User keywords ({custom_hits})")
+    if description_core:
+        reasons.append(f"Description ({description_core})")
     if off_domain:
         reasons.append(f"Off-domain penalty ({off_domain})")
 
@@ -268,8 +278,13 @@ def _score(row, custom_keywords):
         "title_hits": title_core,
         "description_hits": description_core,
         "custom_keyword_hits": custom_hits,
+        "substantive_evidence": substantive_evidence,
         "domain_valid": domain_valid,
-        "slack_eligible": bool(score >= 50 and domain_valid and off_domain == 0),
+        "slack_eligible": bool(
+            score >= 50
+            and substantive_evidence
+            and off_domain == 0
+        ),
         "cosmic_reason": "; ".join(reasons) or "Weak signal",
     })
 
@@ -311,7 +326,6 @@ def search_sam(
     now = datetime.now(timezone.utc)
     lookback = min(config.days_back, 364)
     forward = min(config.response_days_forward, 364)
-    limit = 1000
 
     params = {
         "api_key": api_key,
@@ -319,7 +333,7 @@ def search_sam(
         "postedTo": now.strftime("%m/%d/%Y"),
         "rdlfrom": now.strftime("%m/%d/%Y"),
         "rdlto": (now + timedelta(days=forward)).strftime("%m/%d/%Y"),
-        "limit": limit,
+        "limit": 1000,
         "offset": 0,
     }
 
@@ -481,7 +495,6 @@ def search_sam(
             lambda notice_id: f"https://sam.gov/opp/{notice_id}/view"
         )
 
-        # Production display floor. Low-scoring diagnostic noise is suppressed.
         df = df[df["cosmic_score"] >= 30].copy()
         df = df.loc[:, ~df.columns.duplicated()].copy()
         df = df.sort_values(
@@ -495,7 +508,8 @@ def search_sam(
             f"| after-stale={after_stale_count} | descriptions={fetched} | final={len(df)}"
         )
         status.append(
-            f"PUBLISHABLE | score>=50 + domain validated = {int(df['slack_eligible'].sum()) if not df.empty else 0}"
+            f"PUBLISHABLE | score>=50 + substantive evidence = "
+            f"{int(df['slack_eligible'].sum()) if not df.empty else 0}"
         )
 
         _cache_set(cache_key, df, status)
