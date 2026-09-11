@@ -529,19 +529,16 @@ def render_v2():
 
     results = st.session_state.v2_results
 
-if results is not None and not results.empty:
-    results = results.loc[:, ~results.columns.duplicated()].copy()
-
-if results is None or results.empty:
-    st.info("Run the v2 search to see current actionable opportunities.")
-    return
-    
     results = st.session_state.v2_results
+
+    if results is not None and not results.empty:
+        results = results.loc[:, ~results.columns.duplicated()].copy()
+
     if results is None or results.empty:
         st.info("Run the v2 search to see current actionable opportunities.")
         return
 
-    st.success(f"{len(results)} actionable opportunities found")
+    st.success(f"{len(results)} actionable opportunities found")    st.success(f"{len(results)} actionable opportunities found")
 
     cols = [c for c in [
         "cosmic_score", "cosmic_priority", "title", "responseDeadLine", "postedDate",
