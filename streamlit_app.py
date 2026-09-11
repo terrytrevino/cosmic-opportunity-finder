@@ -526,6 +526,16 @@ def render_v2():
             for line in st.session_state.v2_status:
                 st.text(line)
 
+
+    results = st.session_state.v2_results
+
+if results is not None and not results.empty:
+    results = results.loc[:, ~results.columns.duplicated()].copy()
+
+if results is None or results.empty:
+    st.info("Run the v2 search to see current actionable opportunities.")
+    return
+    
     results = st.session_state.v2_results
     if results is None or results.empty:
         st.info("Run the v2 search to see current actionable opportunities.")
