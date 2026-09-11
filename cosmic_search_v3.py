@@ -188,7 +188,7 @@ def _cache_key(api_key, psc_labels, notice_labels, config, custom_keywords, keyw
         ",".join(sorted(notice_labels)),
         str(min(config.days_back, 364)),
         str(min(config.response_days_forward, 364)),
-        str(min(max(config.limit_per_query, 1), 1000)),
+        "1000",
         str(bool(config.suppress_stale_omnibus)),
         ",".join(_normalize_keywords(custom_keywords)),
         keyword_mode,
@@ -311,7 +311,7 @@ def search_sam(
     now = datetime.now(timezone.utc)
     lookback = min(config.days_back, 364)
     forward = min(config.response_days_forward, 364)
-    limit = min(max(config.limit_per_query, 1), 1000)
+    limit = 1000
 
     params = {
         "api_key": api_key,
