@@ -63,10 +63,6 @@ st.markdown(
     f"""
     <style>
 
-    /* ======================================================
-       COSMIC COLOR PALETTE
-       ====================================================== */
-
     :root {{
         --cosmic-deep-navy: #071426;
         --cosmic-panel-navy: #0C1D32;
@@ -76,11 +72,6 @@ st.markdown(
         --cosmic-white: #F7FAFF;
     }}
 
-
-    /* ======================================================
-       BACKGROUND
-       ====================================================== */
-
     .stApp {{
         background:
             linear-gradient(
@@ -88,7 +79,6 @@ st.markdown(
                 rgba(2, 10, 24, 0.68)
             ),
             url("data:image/png;base64,{background_b64}");
-
         background-size: cover;
         background-position: center top;
         background-attachment: fixed;
@@ -100,29 +90,14 @@ st.markdown(
         padding-bottom: 4rem;
     }}
 
-
-    /* ======================================================
-       SIDEBAR
-       ====================================================== */
-
     section[data-testid="stSidebar"] {{
         background: rgba(7, 20, 38, 0.92);
         border-right: 1px solid var(--cosmic-electric-blue);
     }}
 
-
-    /* ======================================================
-       GENERAL TEXT
-       ====================================================== */
-
     h1, h2, h3, p, label {{
         color: var(--cosmic-white);
     }}
-
-
-    /* ======================================================
-       SELECT / INPUT BOXES
-       ====================================================== */
 
     div[data-baseweb="select"] > div {{
         background-color: rgba(12, 29, 50, 0.94);
@@ -136,42 +111,24 @@ st.markdown(
         color: var(--cosmic-white);
     }}
 
-
-    /* ======================================================
-       MULTISELECT TAGS
-       Replaces the red/orange tags with COSMIC blue
-       ====================================================== */
-
     span[data-baseweb="tag"] {{
         background: linear-gradient(
             135deg,
             #2748D8,
             var(--cosmic-blue)
         ) !important;
-
         color: var(--cosmic-white) !important;
-
         border: 1px solid var(--cosmic-light-blue) !important;
-
         border-radius: 7px !important;
-
         font-weight: 650 !important;
-
         box-shadow:
             0 0 0 1px rgba(140, 199, 255, 0.10),
             0 0 8px rgba(47, 91, 255, 0.18);
     }}
 
-
-    /* X inside multiselect tag */
     span[data-baseweb="tag"] svg {{
         fill: var(--cosmic-white) !important;
     }}
-
-
-    /* ======================================================
-       RADIO BUTTON GROUP
-       ====================================================== */
 
     div[data-testid="stRadio"] label {{
         background: rgba(7, 25, 50, 0.90);
@@ -182,16 +139,9 @@ st.markdown(
         color: var(--cosmic-white);
     }}
 
-
-    /* Radio circle / selected accent */
     div[data-testid="stRadio"] input:checked + div {{
         border-color: var(--cosmic-light-blue) !important;
     }}
-
-
-    /* ======================================================
-       REGULAR BUTTONS
-       ====================================================== */
 
     div.stButton > button {{
         background: linear-gradient(
@@ -199,15 +149,10 @@ st.markdown(
             #2349D8,
             var(--cosmic-blue)
         );
-
         color: var(--cosmic-white);
-
         border: 1px solid var(--cosmic-light-blue);
-
         border-radius: 8px;
-
         font-weight: 700;
-
         box-shadow:
             0 0 10px rgba(47, 91, 255, 0.18);
     }}
@@ -218,19 +163,11 @@ st.markdown(
             #3567FF,
             var(--cosmic-electric-blue)
         );
-
         color: #FFFFFF;
-
         border: 1px solid #FFFFFF;
-
         box-shadow:
             0 0 14px rgba(94, 162, 255, 0.30);
     }}
-
-
-    /* ======================================================
-       PRIMARY BUTTON
-       ====================================================== */
 
     div.stButton > button[kind="primary"] {{
         background: linear-gradient(
@@ -238,21 +175,12 @@ st.markdown(
             #2F5BFF,
             #4C65FF
         );
-
         color: #FFFFFF;
-
         border: 2px solid var(--cosmic-light-blue);
-
         font-weight: 800;
-
         box-shadow:
             0 0 14px rgba(47, 91, 255, 0.25);
     }}
-
-
-    /* ======================================================
-       LINK BUTTONS
-       ====================================================== */
 
     div[data-testid="stLinkButton"] a {{
         background: linear-gradient(
@@ -260,15 +188,10 @@ st.markdown(
             #2349D8,
             var(--cosmic-blue)
         ) !important;
-
         color: #FFFFFF !important;
-
         border: 1px solid var(--cosmic-light-blue) !important;
-
         border-radius: 8px !important;
-
         font-weight: 700 !important;
-
         box-shadow:
             0 0 10px rgba(47, 91, 255, 0.18);
     }}
@@ -279,14 +202,8 @@ st.markdown(
             #3567FF,
             var(--cosmic-electric-blue)
         ) !important;
-
         border: 1px solid #FFFFFF !important;
     }}
-
-
-    /* ======================================================
-       ALERT / INFO BOXES
-       ====================================================== */
 
     div[data-testid="stAlert"] {{
         background: rgba(12, 29, 50, 0.90);
@@ -294,21 +211,11 @@ st.markdown(
         border-radius: 12px;
     }}
 
-
-    /* ======================================================
-       DATA TABLE
-       ====================================================== */
-
     div[data-testid="stDataFrame"] {{
         background: rgba(7, 20, 38, 0.92);
         border: 1px solid rgba(94, 162, 255, 0.55);
         border-radius: 12px;
     }}
-
-
-    /* ======================================================
-       SLIDERS / CONTROL ACCENTS
-       ====================================================== */
 
     div[data-testid="stSlider"] {{
         color: var(--cosmic-white);
@@ -318,6 +225,8 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+
 # ============================================================
 # COSMIC HEADER
 # ============================================================
@@ -374,6 +283,7 @@ in-space servicing, assembly, manufacturing, and broader space ecosystem.
 </div>""",
 unsafe_allow_html=True,
 )
+
 search_mode = st.radio(
     "Search mode",
     ["PSC + Deadline Search v2", "Legacy Agency + NAICS Search v1"],
@@ -396,9 +306,19 @@ def post_rows_to_slack(results: pd.DataFrame, top_n: int, score_col: str):
         st.error("SLACK_WEBHOOK_URL is not configured.")
         return
 
+    publish_rows = results
+    if "slack_eligible" in results.columns:
+        publish_rows = results[results["slack_eligible"].fillna(False).astype(bool)].copy()
+        if publish_rows.empty:
+            st.warning(
+                "No results meet the Slack publishing threshold: "
+                "COSMIC score ≥ 50 plus substantive space/ISAM evidence."
+            )
+            return
+
     posted = 0
     with st.spinner("Posting to Slack..."):
-        for _, row in results.head(top_n).iterrows():
+        for _, row in publish_rows.head(top_n).iterrows():
             payload = {
                 "title": row.get("title", ""),
                 "agency": row.get("fullParentPathName", ""),
@@ -418,7 +338,7 @@ def post_rows_to_slack(results: pd.DataFrame, top_n: int, score_col: str):
                 st.warning(f"Slack post failed: {exc}")
             time.sleep(1.05)
 
-    st.success(f"Posted {posted}/{min(top_n, len(results))} opportunities.")
+    st.success(f"Posted {posted}/{min(top_n, len(publish_rows))} eligible opportunities.")
 
 
 def build_marketplace_export(results: pd.DataFrame) -> pd.DataFrame:
@@ -482,7 +402,7 @@ def render_v2():
     keyword_choice = st.radio(
         "Keyword behavior",
         ["Refine ranking", "Strict filter"],
-        index=1,
+        index=0,
         horizontal=True,
         key="v2_keyword_mode",
         help=(
@@ -526,9 +446,6 @@ def render_v2():
             for line in st.session_state.v2_status:
                 st.text(line)
 
-
-    results = st.session_state.v2_results
-
     results = st.session_state.v2_results
 
     if results is not None and not results.empty:
@@ -543,8 +460,8 @@ def render_v2():
     cols = [c for c in [
         "cosmic_score", "cosmic_priority", "title", "responseDeadLine", "postedDate",
         "classificationCode", "naicsCode", "fullParentPathName", "psc_match", "space_sniff",
-        "title_hits", "description_hits", "custom_keyword_hits", "contact_info",
-        "cosmic_reason", "sam_link"
+        "title_hits", "description_hits", "custom_keyword_hits", "substantive_evidence",
+        "slack_eligible", "contact_info", "cosmic_reason", "sam_link"
     ] if c in results.columns]
 
     st.dataframe(
@@ -557,6 +474,8 @@ def render_v2():
             "cosmic_priority": st.column_config.TextColumn("Priority"),
             "psc_match": st.column_config.CheckboxColumn("PSC"),
             "space_sniff": st.column_config.CheckboxColumn("Space Sniffer"),
+            "substantive_evidence": st.column_config.CheckboxColumn("Substantive Evidence"),
+            "slack_eligible": st.column_config.CheckboxColumn("Slack Eligible"),
         },
     )
 
@@ -583,8 +502,25 @@ def render_v2():
         )
 
     with right:
-        if st.button(f"Post Top {min(top_n, len(results))} to Slack", use_container_width=True, key="post_v2"):
-            post_rows_to_slack(results, top_n, "cosmic_score")
+        eligible_count = (
+            int(results["slack_eligible"].fillna(False).astype(bool).sum())
+            if "slack_eligible" in results.columns
+            else len(results)
+        )
+        if eligible_count > 0:
+            if st.button(
+                f"Post Top {min(top_n, eligible_count)} Eligible to Slack",
+                use_container_width=True,
+                key="post_v2",
+            ):
+                post_rows_to_slack(results, top_n, "cosmic_score")
+        else:
+            st.button(
+                "No Slack-eligible results",
+                use_container_width=True,
+                key="post_v2_none",
+                disabled=True,
+            )
 
 
 def render_legacy():
