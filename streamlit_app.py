@@ -538,7 +538,7 @@ def render_v2():
         st.info("Run the v2 search to see current actionable opportunities.")
         return
 
-    st.success(f"{len(results)} actionable opportunities found")    st.success(f"{len(results)} actionable opportunities found")
+    st.success(f"{len(results)} actionable opportunities found")
 
     cols = [c for c in [
         "cosmic_score", "cosmic_priority", "title", "responseDeadLine", "postedDate",
